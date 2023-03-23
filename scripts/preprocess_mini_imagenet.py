@@ -1,20 +1,21 @@
 """
 Run this script to prepare the miniImageNet dataset.
-
 This script uses the 100 classes of 600 images each used in the Matching Networks paper. The exact images used are
 given in data/mini_imagenet.txt which is downloaded from the link provided in the paper (https://goo.gl/e3orz6).
-
 1. Download files from https://drive.google.com/file/d/0B3Irx3uQNoBMQ1FlNXJsZUdYWEE/view and place in
     data/miniImageNet/images
 2. Run the script
 """
-import os
-import shutil
-
+import sys
+sys.path.append('.')
+from tqdm import tqdm as tqdm
 import numpy as np
+import shutil
+import os
+
 from config import DATA_PATH
 from few_shot.utils import mkdir, rmdir
-from tqdm import tqdm as tqdm
+
 
 # Clean up folders
 rmdir(DATA_PATH + '/miniImageNet/images_background')
@@ -24,13 +25,15 @@ mkdir(DATA_PATH + '/miniImageNet/images_evaluation')
 
 # Find class identities
 classes = []
-for root, _, files in os.walk(DATA_PATH + '/miniImageNet/images/'):
+imagenet_folder = DATA_PATH + '/miniImageNet/images'
+print(imagenet_folder)
+for root, _, files in os.walk(imagenet_folder):
     for f in files:
         if f.endswith('.jpg'):
             classes.append(f[:-12])
 
 classes = list(set(classes))
-print("classes : ", classes)
+print('classes:\n', classes)
 
 # Train/test split
 np.random.seed(0)
@@ -46,7 +49,7 @@ for c in evaluation_classes:
 
 # Move images to correct location
 for root, _, files in os.walk(DATA_PATH + '/miniImageNet/images'):
-    for f in tqdm(files, total=600 * 100):
+    for f in tqdm(files, total=600*100):
         if f.endswith('.jpg'):
             class_name = f[:-12]
             image_name = f[-12:]
