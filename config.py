@@ -1,9 +1,9 @@
 import os
 
 
-PATH = os.path.dirname(os.path.realpath(__file__))
-
-DATA_PATH = PATH + '/data'
+PATH = 'few_shot'
+DATA_PATH = os.path.join(PATH, 'data')
+print('DATA_PATH:', DATA_PATH)
 
 EPSILON = 1e-8
 
