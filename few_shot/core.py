@@ -23,7 +23,7 @@ class NShotTaskSampler(Sampler):
         samples are from the support set while the remaining q * k samples are from the query set.
 
         The support and query sets are sampled such that they are disjoint i.e. do not contain overlapping samples.
-
+  
         # Arguments
             dataset: Instance of torch.utils.data.Dataset from which to draw samples
             episodes_per_epoch: Arbitrary number of batches of n-shot tasks to generate in one epoch
@@ -80,8 +80,7 @@ class NShotTaskSampler(Sampler):
                     query = df[(df['class_id'] == k) & (~df['id'].isin(support_k[k]['id']))].sample(self.q)
                     for i, q in query.iterrows():
                         batch.append(q['id'])
-
-            yield np.stack(batch)
+            yield np.stack(batch)  # batch of (k*n + k*q) image ids for support-set and query-set 
 
 
 class EvaluateFewShot(Callback):
@@ -170,10 +169,13 @@ def prepare_nshot_task(n: int, k: int, q: int) -> Callable:
 
         TODO: Move to arbitrary device
         """
-        x, y = batch
-        x = x.double().cuda()
+        device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        x, y = batch  # torch.Size([kn+kq, 3, 84, 84]) torch.Size([kn+kq])
+        x = x.double().to(device)
+        # x = x.double().cuda()
         # Create dummy 0-(num_classes - 1) label
-        y = create_nshot_task_label(k, q).cuda()
+        y = create_nshot_task_label(k, q).to(device)
+        # y = create_nshot_task_label(k, q).cuda()
         return x, y
 
     return prepare_nshot_task_

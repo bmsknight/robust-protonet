@@ -1,6 +1,8 @@
 """
 Reproduce Omniglot results of Snell et al Prototypical networks.
 """
+import sys
+sys.path.append('.')
 import argparse
 
 from few_shot.callbacks import *
@@ -12,19 +14,21 @@ from few_shot.train import fit
 from few_shot.utils import setup_dirs
 from torch.optim import Adam
 from torch.utils.data import DataLoader
-
+  
 from config import PATH
 
 setup_dirs()
-assert torch.cuda.is_available()
-device = torch.device('cuda')
-torch.backends.cudnn.benchmark = True
+# assert torch.cuda.is_available()
+# device = torch.device('cuda')
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+if torch.cuda.is_available():
+    torch.backends.cudnn.benchmark = True
 
 ##############
 # Parameters #
 ##############
 parser = argparse.ArgumentParser()
-parser.add_argument('--dataset')
+parser.add_argument('--dataset', default='miniImageNet')
 parser.add_argument('--distance', default='l2')
 parser.add_argument('--n-train', default=1, type=int)
 parser.add_argument('--n-test', default=1, type=int)
@@ -82,7 +86,8 @@ model.to(device, dtype=torch.double)
 ############
 print(f'Training Prototypical network on {args.dataset}...')
 optimiser = Adam(model.parameters(), lr=1e-3)
-loss_fn = torch.nn.NLLLoss().cuda()
+# loss_fn = torch.nn.NLLLoss().cuda()
+loss_fn = torch.nn.NLLLoss().to(device)
 
 
 def lr_schedule(epoch, lr):
@@ -109,7 +114,7 @@ callbacks = [
         monitor=f'val_{args.n_test}-shot_{args.k_test}-way_acc'
     ),
     LearningRateScheduler(schedule=lr_schedule),
-    CSVLogger(PATH + f'/logs/proto_nets/{param_str}.csv'),
+    CSVLogger(PATH + f'/models/proto_nets/{param_str}.csv'),
 ]
 
 fit(

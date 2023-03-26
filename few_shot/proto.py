@@ -5,6 +5,7 @@ from typing import Callable
 
 from few_shot.utils import pairwise_distances
 
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 def proto_net_episode(model: Module,
                       optimiser: Optimizer,
@@ -88,3 +89,80 @@ def compute_prototypes(support: torch.Tensor, k: int, n: int) -> torch.Tensor:
     # along that dimension to generate the "prototypes" for each class
     class_prototypes = support.reshape(k, n, -1).mean(dim=1)
     return class_prototypes
+
+
+def proto_net_sup_contrast_episode(model: Module,
+                                   optimiser: Optimizer,
+                                   loss_fn: Callable,
+                                   x: torch.Tensor,
+                                   y: torch.Tensor,
+                                   proj_head: Module,
+                                   contrast_loss_fn: Callable,
+                                   n_shot: int,
+                                   k_way: int,
+                                   q_queries: int,
+                                   distance: str,
+                                   train: bool):
+    """Performs a Supervised Contrastive Learning based single training episode for a Prototypical Network.
+
+    # Arguments
+        model: Prototypical Network to be trained.
+        optimiser: Optimiser to calculate gradient step
+        loss_fn: Loss function to calculate between predictions and outputs. Should be cross-entropy
+        contrast_loss_fn: Supervised Contrastive Loss function to calculate between projections of embeddings
+        x: Input samples of few shot classification task
+        y: Input labels of few shot classification task
+        n_shot: Number of examples per class in the support set
+        k_way: Number of classes in the few shot classification task
+        q_queries: Number of examples per class in the query set
+        distance: Distance metric to use when calculating distance between class prototypes and queries
+        train: Whether (True) or not (False) to perform a parameter update
+
+    # Returns
+        loss: Loss of the Prototypical Network on this task
+        y_pred: Predicted class probabilities for the query set on this task
+    """
+    if train:
+        # Zero gradients
+        model.train()
+        proj_head.train()
+        optimiser.zero_grad()
+    else:
+        model.eval()
+
+    # Embed all samples
+    embeddings = model(x)
+
+    # Samples are ordered by the NShotWrapper class as follows:
+    # k lots of n support samples from a particular class
+    # k lots of q query samples from those classes
+    support = embeddings[:n_shot*k_way]  # (nk, dim)
+    queries = embeddings[n_shot*k_way:]
+    prototypes = compute_prototypes(support, k_way, n_shot)
+
+    # Calculate squared distances between all queries and all prototypes
+    # Output should have shape (q_queries * k_way, k_way) = (num_queries, k_way)
+    distances = pairwise_distances(queries, prototypes, distance)
+
+    # Calculate log p_{phi} (y = k | x)
+    log_p_y = (-distances).log_softmax(dim=1)
+    loss = loss_fn(log_p_y, y)
+
+    # Prediction probabilities are softmax over distances
+    y_pred = (-distances).softmax(dim=1)
+
+    if train:
+        # Calculate sup contrastive loss
+        features = proj_head(support)
+        features = features.view(k_way, n_shot, -1)
+        labels = torch.arange(0, k_way).long().to(device=device)
+        contrast_loss = contrast_loss_fn(features, labels)    
+        # total_loss = contrast_loss_fn(features, labels) + loss
+        # Take gradient step
+        contrast_loss.backward()
+        # total_loss.backward()
+        optimiser.step()
+    else:
+        pass
+
+    return loss, contrast_loss, y_pred
