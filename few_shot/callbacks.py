@@ -205,7 +205,7 @@ class CSVLogger(Callback):
             training). False: overwrite existing file,
     """
 
-    def __init__(self, filename, separator=',', append=False):
+    def __init__(self, filename, separator=',', append=True):
         self.sep = separator
         self.filename = filename
         self.append = append

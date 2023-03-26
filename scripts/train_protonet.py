@@ -4,6 +4,7 @@ Reproduce Omniglot results of Snell et al Prototypical networks.
 import sys
 sys.path.append('.')
 import argparse
+import torch
 
 from few_shot.callbacks import *
 from few_shot.core import NShotTaskSampler, EvaluateFewShot, prepare_nshot_task
@@ -36,6 +37,8 @@ parser.add_argument('--k-train', default=60, type=int)
 parser.add_argument('--k-test', default=5, type=int)
 parser.add_argument('--q-train', default=5, type=int)
 parser.add_argument('--q-test', default=1, type=int)
+parser.add_argument('--start_epoch', default=1, type=int)
+parser.add_argument('--weights_path', type=str)
 args = parser.parse_args()
 
 evaluation_episodes = 1000
@@ -80,6 +83,8 @@ evaluation_taskloader = DataLoader(
 #########
 model = get_few_shot_encoder(num_input_channels)
 model.to(device, dtype=torch.double)
+model.load_state_dict(torch.load(args.weights_path))
+print(f'Loaded weights from {args.weights_path}')
 
 ############
 # Training #
@@ -127,6 +132,7 @@ fit(
     callbacks=callbacks,
     metrics=['categorical_accuracy'],
     fit_function=proto_net_episode,
+    start_epoch=args.start_epoch,
     fit_function_kwargs={'n_shot': args.n_train, 'k_way': args.k_train, 'q_queries': args.q_train, 'train': True,
                          'distance': args.distance},
 )

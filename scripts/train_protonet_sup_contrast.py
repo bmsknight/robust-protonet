@@ -38,6 +38,9 @@ parser.add_argument('--q-train', default=5, type=int)
 parser.add_argument('--q-test', default=1, type=int)
 parser.add_argument('--contrast_feature_dim', default=128)
 parser.add_argument('--contrast_head', default='mlp')
+parser.add_argument('--start_epoch', default=1, type=int)
+parser.add_argument('--weights_path', type=str)
+parser.add_argument('--resume', default=False, type=bool)
 args = parser.parse_args()
 
 evaluation_episodes = 1000
@@ -82,6 +85,8 @@ evaluation_taskloader = DataLoader(
 #########
 model = get_few_shot_encoder(num_input_channels)
 model.to(device, dtype=torch.double)
+model.load_state_dict(torch.load(args.weights_path))
+print(f'Loaded weights from {args.weights_path}')
 
 proj_head = SupConProjHead(dim_in=1600, feat_dim=args.contrast_feature_dim, head=args.contrast_head)
 proj_head.to(device, dtype=torch.double)
@@ -133,6 +138,7 @@ fit_contrast(
     callbacks=callbacks,
     metrics=['categorical_accuracy'],
     fit_function=proto_net_sup_contrast_episode,
+    start_epoch=args.start_epoch,
     fit_function_kwargs={'n_shot': args.n_train, 'k_way': args.k_train, 'q_queries': args.q_train, 'train': True,
                          'distance': args.distance, 'proj_head': proj_head, 'contrast_loss_fn': contrast_loss_fn},
 )

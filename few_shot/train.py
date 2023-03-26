@@ -55,7 +55,7 @@ def batch_metrics(model: Module, y_pred: torch.Tensor, y: torch.Tensor, metrics:
 
 def fit(model: Module, optimiser: Optimizer, loss_fn: Callable, epochs: int, dataloader: DataLoader,
         prepare_batch: Callable, metrics: List[Union[str, Callable]] = None, callbacks: List[Callback] = None,
-        verbose: bool =True, fit_function: Callable = gradient_step, fit_function_kwargs: dict = {}):
+        verbose: bool =True, fit_function: Callable = gradient_step, start_epoch: int = 1, fit_function_kwargs: dict = {}):
     """Function to abstract away training loop.
 
     The benefit of this function is that allows training scripts to be much more readable and allows for easy re-use of
@@ -99,7 +99,7 @@ def fit(model: Module, optimiser: Optimizer, loss_fn: Callable, epochs: int, dat
 
     callbacks.on_train_begin()
 
-    for epoch in range(1, epochs+1):
+    for epoch in range(start_epoch, epochs+1):
         callbacks.on_epoch_begin(epoch)
 
         epoch_logs = {}
@@ -132,7 +132,7 @@ def fit(model: Module, optimiser: Optimizer, loss_fn: Callable, epochs: int, dat
 
 def fit_contrast(model: Module, optimiser: Optimizer, loss_fn: Callable, epochs: int, dataloader: DataLoader,
         prepare_batch: Callable, metrics: List[Union[str, Callable]] = None, callbacks: List[Callback] = None,
-        verbose: bool =True, fit_function: Callable = gradient_step, fit_function_kwargs: dict = {}):
+        verbose: bool =True, fit_function: Callable = gradient_step, start_epoch: int = 1, fit_function_kwargs: dict = {}):
     """Function to abstract away training loop.
 
     The benefit of this function is that allows training scripts to be much more readable and allows for easy re-use of
@@ -176,7 +176,7 @@ def fit_contrast(model: Module, optimiser: Optimizer, loss_fn: Callable, epochs:
 
     callbacks.on_train_begin()
 
-    for epoch in range(1, epochs+1):
+    for epoch in range(start_epoch, epochs+1):
         callbacks.on_epoch_begin(epoch)
 
         epoch_logs = {}
