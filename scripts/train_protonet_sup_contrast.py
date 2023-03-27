@@ -41,6 +41,7 @@ parser.add_argument('--contrast_feature_dim', default=128)
 parser.add_argument('--contrast_head', default='mlp')
 parser.add_argument('--start_epoch', default=1, type=int)
 parser.add_argument('--weights_path', type=str)
+parser.add_argument('--proj_weights_path', type=str)
 parser.add_argument('--resume', default=False, type=bool)
 args = parser.parse_args()
 
@@ -86,11 +87,15 @@ evaluation_taskloader = DataLoader(
 #########
 model = get_few_shot_encoder(num_input_channels)
 model.to(device, dtype=torch.double)
-model.load_state_dict(torch.load(args.weights_path))
-print(f'Loaded weights from {args.weights_path}')
+if args.weights_path is not None:
+    model.load_state_dict(torch.load(args.weights_path))
+    print(f'Loaded weights from {args.weights_path}')
 
 proj_head = SupConProjHead(dim_in=1600, feat_dim=args.contrast_feature_dim, head=args.contrast_head)
 proj_head.to(device, dtype=torch.double)
+if args.proj_weights_path is not None:
+    proj_head.load_state_dict(torch.load(args.proj_weights_path))
+    print(f'Loaded projection head weights from {args.proj_weights_path}')
 
 ############
 # Training #
@@ -124,7 +129,8 @@ callbacks = [
     ModelCheckpoint(
         filepath=PATH + f'/models/proto_nets/contrast_{param_str}.pth',
         proj_filepath=PATH + f'/models/proto_nets/contrast_{param_str}_proj.pth',
-        monitor=f'val_{args.n_test}-shot_{args.k_test}-way_acc'
+        monitor=f'val_{args.n_test}-shot_{args.k_test}-way_acc',
+        save_best_only=True
     ),
     LearningRateScheduler(schedule=lr_schedule),
     CSVLogger(PATH + f'/models/proto_nets/contrast_logs_{param_str}.csv'),
