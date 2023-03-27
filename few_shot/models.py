@@ -271,7 +271,7 @@ class SupConProjHead(nn.Module):
         return feat
 
 if __name__=='__main__':
-    x = torch.rand(8, 3, 32, 32)
+    x = torch.rand(8, 3, 84, 84)
     model = get_few_shot_encoder(num_input_channels=3) 
     pred = model(x)
     print(pred.shape)

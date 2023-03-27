@@ -4,6 +4,7 @@ Reproduce Omniglot results of Snell et al Prototypical networks.
 import sys
 sys.path.append('.')
 import argparse
+import torch
 
 from few_shot.callbacks import *
 from few_shot.core import NShotTaskSampler, EvaluateFewShot, prepare_nshot_task
