@@ -24,13 +24,13 @@ torch.backends.cudnn.benchmark = True
 # Parameters #
 ##############
 parser = argparse.ArgumentParser()
-parser.add_argument('--dataset')
+parser.add_argument('--dataset', default="miniImageNet")
 parser.add_argument('--distance', default='l2')
-parser.add_argument('--n-train', default=1, type=int)
-parser.add_argument('--n-test', default=1, type=int)
-parser.add_argument('--k-train', default=60, type=int)
+parser.add_argument('--n-train', default=5, type=int)
+parser.add_argument('--n-test', default=5, type=int)
+parser.add_argument('--k-train', default=20, type=int)
 parser.add_argument('--k-test', default=5, type=int)
-parser.add_argument('--q-train', default=5, type=int)
+parser.add_argument('--q-train', default=15, type=int)
 parser.add_argument('--q-test', default=1, type=int)
 args = parser.parse_args()
 
