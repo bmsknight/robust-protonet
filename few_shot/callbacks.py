@@ -30,6 +30,9 @@ class CallbackList(object):
         for callback in self.callbacks:
             callback.set_model(model)
 
+    def set_proj_model(self, proj_model=None):
+        self.proj_model = proj_model
+
     def on_epoch_begin(self, epoch, logs=None):
         """Called at the start of an epoch.
         # Arguments
@@ -98,6 +101,9 @@ class Callback(object):
 
     def set_model(self, model):
         self.model = model
+
+    def set_proj_model(self, proj_model=None):
+        self.proj_model = proj_model
 
     def on_epoch_begin(self, epoch, logs=None):
         pass
@@ -430,11 +436,12 @@ class ModelCheckpoint(Callback):
         period: Interval (number of epochs) between checkpoints.
     """
 
-    def __init__(self, filepath, monitor='val_loss', verbose=0, save_best_only=False, mode='auto', period=1):
+    def __init__(self, filepath, monitor='val_loss', verbose=0, save_best_only=False, mode='auto', period=1, proj_filepath=None):
         super(ModelCheckpoint, self).__init__()
         self.monitor = monitor
         self.verbose = verbose
         self.filepath = filepath
+        self.proj_filepath = proj_filepath
         self.save_best_only = save_best_only
         self.period = period
         self.epochs_since_last_save = 0
@@ -477,6 +484,8 @@ class ModelCheckpoint(Callback):
                                      current, filepath))
                         self.best = current
                         torch.save(self.model.state_dict(), filepath)
+                        if self.proj_model is not None:
+                            torch.save(self.proj_model.state_dict(), self.proj_filepath)
                     else:
                         if self.verbose > 0:
                             print('\nEpoch %05d: %s did not improve from %0.5f' %
@@ -485,6 +494,8 @@ class ModelCheckpoint(Callback):
                 if self.verbose > 0:
                     print('\nEpoch %05d: saving model to %s' % (epoch + 1, filepath))
                 torch.save(self.model.state_dict(), filepath)
+                if self.proj_model is not None:
+                    torch.save(self.proj_model.state_dict(), self.proj_filepath)
 
 
 class LearningRateScheduler(Callback):

@@ -123,6 +123,7 @@ callbacks = [
     ),
     ModelCheckpoint(
         filepath=PATH + f'/models/proto_nets/contrast_{param_str}.pth',
+        proj_filepath=PATH + f'/models/proto_nets/contrast_{param_str}_proj.pth',
         monitor=f'val_{args.n_test}-shot_{args.k_test}-way_acc'
     ),
     LearningRateScheduler(schedule=lr_schedule),

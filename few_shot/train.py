@@ -161,6 +161,7 @@ def fit_contrast(model: Module, optimiser: Optimizer, loss_fn: Callable, epochs:
 
     callbacks = CallbackList([DefaultCallback(), ] + (callbacks or []) + [ProgressBarLogger(), ])
     callbacks.set_model(model)
+    callbacks.set_proj_model(fit_function_kwargs['proj_head'])
     callbacks.set_params({
         'num_batches': num_batches,
         'batch_size': batch_size,
