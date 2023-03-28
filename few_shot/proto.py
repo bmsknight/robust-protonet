@@ -15,7 +15,8 @@ def proto_net_episode(model: Module,
                       k_way: int,
                       q_queries: int,
                       distance: str,
-                      train: bool):
+                      train: bool,
+                      is_he_model: bool = False):
     """Performs a single training episode for a Prototypical Network.
 
     # Arguments
@@ -49,7 +50,8 @@ def proto_net_episode(model: Module,
     # k lots of q query samples from those classes
     support = embeddings[:n_shot*k_way]
     queries = embeddings[n_shot*k_way:]
-    prototypes = compute_prototypes(support, k_way, n_shot)
+    # For HE model we need to rescale the prototypes to ensure they are on the manifold
+    prototypes = compute_prototypes(support, k_way, n_shot, rescale=is_he_model)
 
     # Calculate squared distances between all queries and all prototypes
     # Output should have shape (q_queries * k_way, k_way) = (num_queries, k_way)
@@ -72,7 +74,7 @@ def proto_net_episode(model: Module,
     return loss, y_pred
 
 
-def compute_prototypes(support: torch.Tensor, k: int, n: int) -> torch.Tensor:
+def compute_prototypes(support: torch.Tensor, k: int, n: int, rescale: bool = False) -> torch.Tensor:
     """Compute class prototypes from support samples.
 
     # Arguments
@@ -87,4 +89,8 @@ def compute_prototypes(support: torch.Tensor, k: int, n: int) -> torch.Tensor:
     # Reshape so the first dimension indexes by class then take the mean
     # along that dimension to generate the "prototypes" for each class
     class_prototypes = support.reshape(k, n, -1).mean(dim=1)
+
+    # rescale the prototype embedding to be in the manifold for Hypersphere Embedding
+    if rescale:
+        class_prototypes = torch.nn.functional.normalize(class_prototypes, p=2, dim=1)
     return class_prototypes

@@ -1,8 +1,6 @@
-from torch import nn
-import numpy as np
-import torch.nn.functional as F
 import torch
-from typing import Dict
+import torch.nn.functional as F
+from torch import nn
 
 
 ##########
@@ -15,6 +13,7 @@ class Flatten(nn.Module):
     # Arguments
         input: Input tensor
     """
+
     def forward(self, input):
         return input.view(input.size(0), -1)
 
@@ -25,6 +24,7 @@ class GlobalMaxPool1d(nn.Module):
     # Arguments
         input: Input tensor
     """
+
     def forward(self, input):
         return nn.functional.max_pool1d(input, kernel_size=input.size()[2:]).view(-1, input.size(1))
 
@@ -35,11 +35,12 @@ class GlobalAvgPool2d(nn.Module):
     # Arguments
         input: Input tensor
     """
+
     def forward(self, input):
         return nn.functional.avg_pool2d(input, kernel_size=input.size()[2:]).view(-1, input.size(1))
 
 
-def conv_block(in_channels: int, out_channels: int) -> nn.Module:
+def conv_block(in_channels: int, out_channels: int, bias=True) -> nn.Module:
     """Returns a Module that performs 3x3 convolution, ReLu activation, 2x2 max pooling.
 
     # Arguments
@@ -47,7 +48,7 @@ def conv_block(in_channels: int, out_channels: int) -> nn.Module:
         out_channels:
     """
     return nn.Sequential(
-        nn.Conv2d(in_channels, out_channels, 3, padding=1),
+        nn.Conv2d(in_channels, out_channels, 3, padding=1, bias=bias),
         nn.BatchNorm2d(out_channels),
         nn.ReLU(),
         nn.MaxPool2d(kernel_size=2, stride=2)
@@ -89,6 +90,47 @@ def get_few_shot_encoder(num_input_channels=1) -> nn.Module:
         conv_block(64, 64),
         Flatten(),
     )
+
+
+def get_few_shot_he_encoder(num_input_channels=1,final_layer_size=64) -> nn.Module:
+    """Creates a few shot encoder as used in Matching and Prototypical Networks
+
+    # Arguments:
+        num_input_channels: Number of color channels the model expects input data to contain. Omniglot = 1,
+            miniImageNet = 3
+        final_layer_size: 64 for Omniglot, 1600 for miniImageNet
+    """
+
+    class HENN(nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.feature_extractor = nn.Sequential(
+                conv_block(num_input_channels, 64, bias=False),
+                conv_block(64, 64, bias=False),
+                conv_block(64, 64, bias=False),
+                conv_block(64, 64, bias=False),
+                Flatten(),
+            )
+
+            self.embedding_layer = nn.Linear(final_layer_size, final_layer_size, bias=False)
+
+            for m in self.modules():
+                if isinstance(m, nn.Conv2d):
+                    nn.init.kaiming_normal_(m.weight, mode='fan_out', nonlinearity='relu')
+                elif isinstance(m, (nn.BatchNorm2d, nn.GroupNorm)):
+                    nn.init.constant_(m.weight, 1)
+                    nn.init.constant_(m.bias, 0)
+
+        def forward(self, x):
+            x = self.feature_extractor(x)
+            # normalize the features
+            x = nn.functional.normalize(x, p=2, dim=1)
+            # normalize the weights
+            self.embedding_layer.weight.data = nn.functional.normalize(self.embedding_layer.weight.data, p=2, dim=1)
+
+            return self.embedding_layer(x)
+
+    return HENN()
 
 
 class FewShotClassifier(nn.Module):
@@ -222,7 +264,7 @@ class AttentionLSTM(nn.Module):
     def forward(self, support, queries):
         # Get embedding dimension, d
         if support.shape[-1] != queries.shape[-1]:
-            raise(ValueError("Support and query set have different embedding dimension!"))
+            raise (ValueError("Support and query set have different embedding dimension!"))
 
         batch_size = queries.shape[0]
         embedding_dim = queries.shape[1]
