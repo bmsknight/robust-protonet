@@ -157,12 +157,12 @@ def proto_net_sup_contrast_episode(model: Module,
         features = features.view(k_way, n_shot, -1)
         labels = torch.arange(0, k_way).long().to(device=device)
         contrast_loss = contrast_loss_fn(features, labels)    
-        # total_loss = contrast_loss_fn(features, labels) + loss
+        total_loss = contrast_loss + loss
         # Take gradient step
-        contrast_loss.backward()
-        # total_loss.backward()
+        # contrast_loss.backward()
+        total_loss.backward()
         optimiser.step()
     else:
         pass
 
-    return loss, contrast_loss, y_pred
+    return loss, contrast_loss, total_loss, y_pred

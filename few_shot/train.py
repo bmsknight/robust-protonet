@@ -114,6 +114,7 @@ def fit(model: Module, optimiser: Optimizer, loss_fn: Callable, epochs: int, dat
             loss, y_pred = fit_function(model, optimiser, loss_fn, x, y, **fit_function_kwargs)
             batch_logs['loss'] = loss.item()
             batch_logs['contrast_loss'] = 0
+            batch_logs['total_loss'] = 0
 
             # Loops through all metrics
             batch_logs = batch_metrics(model, y_pred, y, metrics, batch_logs)
@@ -160,8 +161,7 @@ def fit_contrast(model: Module, optimiser: Optimizer, loss_fn: Callable, epochs:
     batch_size = dataloader.batch_size
 
     callbacks = CallbackList([DefaultCallback(), ] + (callbacks or []) + [ProgressBarLogger(), ])
-    callbacks.set_model(model)
-    callbacks.set_proj_model(fit_function_kwargs['proj_head'])
+    callbacks.set_model(model, fit_function_kwargs['proj_head'])
     callbacks.set_params({
         'num_batches': num_batches,
         'batch_size': batch_size,
@@ -169,6 +169,7 @@ def fit_contrast(model: Module, optimiser: Optimizer, loss_fn: Callable, epochs:
         'metrics': (metrics or []),
         'prepare_batch': prepare_batch,
         'loss_fn': loss_fn,
+        'contrast_loss_fn': fit_function_kwargs['contrast_loss_fn'],
         'optimiser': optimiser
     })
 
@@ -189,9 +190,10 @@ def fit_contrast(model: Module, optimiser: Optimizer, loss_fn: Callable, epochs:
 
             x, y = prepare_batch(batch)
 
-            loss, contrast_loss, y_pred = fit_function(model, optimiser, loss_fn, x, y, **fit_function_kwargs)
+            loss, contrast_loss, total_loss, y_pred = fit_function(model, optimiser, loss_fn, x, y, **fit_function_kwargs)
             batch_logs['loss'] = loss.item()
             batch_logs['contrast_loss'] = contrast_loss.item()
+            batch_logs['total_loss'] = total_loss.item()
 
             # Loops through all metrics
             batch_logs = batch_metrics(model, y_pred, y, metrics, batch_logs)

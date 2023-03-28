@@ -18,7 +18,6 @@ from torch.utils.data import DataLoader
   
 from config import PATH
 
-setup_dirs()
 # assert torch.cuda.is_available()
 # device = torch.device('cuda')
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -42,8 +41,12 @@ parser.add_argument('--contrast_head', default='mlp')
 parser.add_argument('--start_epoch', default=1, type=int)
 parser.add_argument('--weights_path', type=str)
 parser.add_argument('--proj_weights_path', type=str)
-parser.add_argument('--resume', default=False, type=bool)
 args = parser.parse_args()
+
+param_str = f'{args.dataset}_nt={args.n_train}_kt={args.k_train}_qt={args.q_train}_' \
+            f'nv={args.n_test}_kv={args.k_test}_qv={args.q_test}'
+
+setup_dirs(param_str)
 
 evaluation_episodes = 1000
 episodes_per_epoch = 100
@@ -60,9 +63,6 @@ elif args.dataset == 'miniImageNet':
     drop_lr_every = 40
 else:
     raise (ValueError, 'Unsupported dataset')
-
-param_str = f'{args.dataset}_nt={args.n_train}_kt={args.k_train}_qt={args.q_train}_' \
-            f'nv={args.n_test}_kv={args.k_test}_qv={args.q_test}'
 
 print(param_str)
 
@@ -127,13 +127,15 @@ callbacks = [
         distance=args.distance
     ),
     ModelCheckpoint(
-        filepath=PATH + f'/models/proto_nets/contrast_{param_str}.pth',
-        proj_filepath=PATH + f'/models/proto_nets/contrast_{param_str}_proj.pth',
+        filepath=PATH + f'/models/proto_nets/{param_str}/contrast_{param_str}.pth',
+        proj_filepath=PATH + f'/models/proto_nets/{param_str}/contrast_{param_str}_proj.pth',
+        proj_model=proj_head,
         monitor=f'val_{args.n_test}-shot_{args.k_test}-way_acc',
+        verbose=1,
         save_best_only=True
     ),
     LearningRateScheduler(schedule=lr_schedule),
-    CSVLogger(PATH + f'/models/proto_nets/contrast_logs_{param_str}.csv'),
+    CSVLogger(PATH + f'/models/proto_nets/{param_str}/contrast_logs_{param_str}.csv'),
 ]
 
 fit_contrast(

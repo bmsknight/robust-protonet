@@ -31,14 +31,15 @@ def rmdir(dir):
         pass
 
 
-def setup_dirs():
+def setup_dirs(param_str):
     """Creates directories for this project."""
     # mkdir(PATH + '/logs/')
     # mkdir(PATH + '/logs/proto_nets')
     # mkdir(PATH + '/logs/matching_nets')
     # mkdir(PATH + '/logs/maml')
     mkdir(PATH + '/models/')
-    mkdir(PATH + '/models/proto_nets')
+    mkdir(PATH + '/models/proto_nets/')
+    mkdir(PATH + f'/models/proto_nets/{param_str}')
     # mkdir(PATH + '/models/matching_nets')
     # mkdir(PATH + '/models/maml')
 
