@@ -1,7 +1,7 @@
 import os
 
 
-PATH = 'few_shot'
+PATH = '.'
 DATA_PATH = os.path.join(PATH, 'data')
 print('DATA_PATH:', DATA_PATH)
 

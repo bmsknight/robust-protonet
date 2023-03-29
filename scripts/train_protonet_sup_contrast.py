@@ -135,7 +135,7 @@ callbacks = [
         save_best_only=True
     ),
     LearningRateScheduler(schedule=lr_schedule),
-    CSVLogger(PATH + f'/models/proto_nets/{param_str}/contrast_logs_{param_str}.csv'),
+    CSVLogger(filename=PATH + f'/models/proto_nets/{param_str}/contrast_logs_{param_str}.csv')
 ]
 
 fit_contrast(
