@@ -10,7 +10,7 @@ from config import PATH
 from few_shot.core import NShotTaskSampler, prepare_nshot_task
 from few_shot.datasets import MiniImageNet
 from few_shot.metrics import categorical_accuracy
-from few_shot.models import get_few_shot_encoder
+from few_shot.models import get_few_shot_encoder, get_few_shot_he_encoder
 from few_shot.protonet_wrapper import ProtoNetWrapper
 from few_shot.utils import setup_dirs
 
@@ -27,6 +27,7 @@ torch.backends.cudnn.deterministic = True
 ##############
 parser = argparse.ArgumentParser()
 parser.add_argument('--dataset', default="miniImageNet")
+parser.add_argument('--model', default="he")
 parser.add_argument('--distance', default='l2')
 parser.add_argument('--n-train', default=5, type=int)
 parser.add_argument('--n-test', default=5, type=int)
@@ -62,10 +63,21 @@ prepare_batch = prepare_nshot_task(args.n_test, args.k_test, args.q_test)
 #########
 # Model #
 #########
-emb_model = get_few_shot_encoder(num_input_channels)
-emb_model.load_state_dict(torch.load(PATH + f'/models/proto_nets/baseline.pth'))
+if args.model == "baseline":
+    emb_model = get_few_shot_encoder(num_input_channels)
+    args.distance = "l2"
+    model_str = "baseline"
+    is_he_model = False
+elif args.model == "he":
+    emb_model = get_few_shot_he_encoder(num_input_channels,final_layer_size=1600)
+    args.distance = "cosine"
+    model_str = "he"
+    is_he_model =True
+else:
+    raise ValueError("Unknown Model type")
+emb_model.load_state_dict(torch.load(PATH + f'/models/proto_nets/{model_str}.pth'))
 model = ProtoNetWrapper(embedding_model=emb_model, distance=args.distance, n_shot=args.n_test, k_way=args.k_test,
-                        is_he_model=False)
+                        is_he_model=is_he_model)
 model.to(device, dtype=torch.float)
 
 # attack
