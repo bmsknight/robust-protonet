@@ -14,14 +14,17 @@ class ProtoNetWrapper(Module):
         self.k_way = k_way
         # self.embedding_model.eval()
         self.he_model = is_he_model
+        self.prototypes = None
 
-    def _classification_head(self, embeddings):
-        support = embeddings[:self.n_shot * self.k_way]
-        queries = embeddings[self.n_shot * self.k_way:]
-        prototypes = compute_prototypes(support, self.k_way, self.n_shot, rescale=self.he_model)
-        distances = pairwise_distances(queries, prototypes, self.distance)
+    def _classification_head(self, queries):
+        distances = pairwise_distances(queries, self.prototypes, self.distance)
         y_pred = (-distances).softmax(dim=1)
         return y_pred
+
+    def set_embeddings(self,x):
+        support = self.embedding_model(x)
+        prototypes = compute_prototypes(support, self.k_way, self.n_shot, rescale=self.he_model)
+        self.prototypes = prototypes
 
     def forward(self, x):
         emb = self.embedding_model(x)

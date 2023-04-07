@@ -3,6 +3,7 @@ import argparse
 import numpy as np
 import torch
 from torch.utils.data import DataLoader
+from torchattacks import PGD
 from tqdm import tqdm
 
 from config import PATH
@@ -65,17 +66,33 @@ emb_model = get_few_shot_encoder(num_input_channels)
 emb_model.load_state_dict(torch.load(PATH + f'/models/proto_nets/baseline.pth'))
 model = ProtoNetWrapper(embedding_model=emb_model, distance=args.distance, n_shot=args.n_test, k_way=args.k_test,
                         is_he_model=False)
-model.to(device, dtype=torch.double)
+model.to(device, dtype=torch.float)
+
+# attack
+atk = PGD(model, eps=8 / 255, alpha=2 / 225, steps=10, random_start=True)
+atk.set_normalization_used(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+print(atk)
 
 # evaluate
 model.eval()
 total_clean_acc = 0
+total_adv_acc = 0
 count = 0
 for batch_index, batch in enumerate(tqdm(evaluation_taskloader)):
     x, y = prepare_batch(batch)
-    y_pred = model(x)
+    support = x[:args.n_test * args.k_test]
+    queries = x[args.n_test * args.k_test:]
+    model.set_embeddings(support)
+
+    y_pred = model(queries)
     count += y_pred.shape[0]
     total_clean_acc += categorical_accuracy(y, y_pred) * y_pred.shape[0]
+    adv_query = atk(queries, y)
+    y_pred_adv = model(adv_query)
+    total_adv_acc += categorical_accuracy(y, y_pred_adv) * y_pred_adv.shape[0]
 
 clean_acc = total_clean_acc / count
-print(clean_acc)
+print(f"Clean Accuracy of the model : {clean_acc}")
+
+adv_acc = total_adv_acc / count
+print(f"Adversarial Accuracy of the model : {adv_acc}")
