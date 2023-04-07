@@ -36,7 +36,6 @@ parser.add_argument('--q-test', default=1, type=int)
 args = parser.parse_args()
 
 evaluation_episodes = 2000
-episodes_per_epoch = 100
 
 dataset_class = MiniImageNet
 num_input_channels = 3
@@ -54,7 +53,7 @@ print(param_str)
 evaluation = dataset_class('evaluation')
 evaluation_taskloader = DataLoader(
     evaluation,
-    batch_sampler=NShotTaskSampler(evaluation, episodes_per_epoch, args.n_test, args.k_test, args.q_test),
+    batch_sampler=NShotTaskSampler(evaluation, evaluation_episodes, args.n_test, args.k_test, args.q_test),
     num_workers=4
 )
 prepare_batch = prepare_nshot_task(args.n_test, args.k_test, args.q_test)
