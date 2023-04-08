@@ -6,6 +6,10 @@ import torch
 from few_shot.metrics import categorical_accuracy
 from few_shot.callbacks import Callback
 
+np.random.seed(0) 
+torch.manual_seed(0) 
+torch.backends.cudnn.benchmark=True 
+torch.backends.cudnn.deterministic=True
 
 class NShotTaskSampler(Sampler):
     def __init__(self,
@@ -171,7 +175,7 @@ def prepare_nshot_task(n: int, k: int, q: int) -> Callable:
         """
         device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         x, y = batch  # torch.Size([kn+kq, 3, 84, 84]) torch.Size([kn+kq])
-        x = x.double().to(device)
+        x = x.float().to(device)
         # x = x.double().cuda()
         # Create dummy 0-(num_classes - 1) label
         y = create_nshot_task_label(k, q).to(device)

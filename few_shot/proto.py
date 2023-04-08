@@ -43,7 +43,7 @@ def proto_net_episode(model: Module,
         model.eval()
 
     # Embed all samples
-    embeddings = model(x)
+    embeddings = model(x.double().to(device))
 
     # Samples are ordered by the NShotWrapper class as follows:
     # k lots of n support samples from a particular class
