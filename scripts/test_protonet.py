@@ -33,8 +33,8 @@ parser.add_argument('--distance', default='l2')
 parser.add_argument('--n-test', default=5, type=int)
 parser.add_argument('--k-test', default=5, type=int)
 parser.add_argument('--q-test', default=1, type=int)
-parser.add_argument('--weights_path', default=".\\few_shot\\models\\proto_nets\\baseline\\baseline.pth", type=str)
-# parser.add_argument('--weights_path', default=".\\few_shot\\models\\proto_nets\\contrastive_results\contrast_miniImageNet_nt=5_kt=20_qt=15_nv=5_kv=5_qv=1.pth", type=str)
+# parser.add_argument('--weights_path', default=".\\few_shot\\models\\proto_nets\\baseline\\baseline.pth", type=str)
+parser.add_argument('--weights_path', default=".\\few_shot\\models\\proto_nets\\contrastive_results\contrast_miniImageNet_nt=5_kt=20_qt=15_nv=5_kv=5_qv=1.pth", type=str)
 args = parser.parse_args()
 
 param_str = f'{args.dataset}_nv={args.n_test}_kv={args.k_test}_qv={args.q_test}'
