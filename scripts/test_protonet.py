@@ -24,6 +24,11 @@ device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 if torch.cuda.is_available():
     torch.backends.cudnn.benchmark = True
 
+np.random.seed(0)
+torch.manual_seed(0)
+torch.backends.cudnn.benchmark = True
+torch.backends.cudnn.deterministic = True
+
 ##############
 # Parameters #
 ##############
