@@ -18,7 +18,6 @@ from torch.utils.data import DataLoader
   
 from config import PATH
 
-setup_dirs()
 # assert torch.cuda.is_available()
 # device = torch.device('cuda')
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -31,11 +30,11 @@ if torch.cuda.is_available():
 parser = argparse.ArgumentParser()
 parser.add_argument('--dataset', default='miniImageNet')
 parser.add_argument('--distance', default='l2')
-parser.add_argument('--n-train', default=1, type=int)
-parser.add_argument('--n-test', default=1, type=int)
-parser.add_argument('--k-train', default=60, type=int)
+parser.add_argument('--n-train', default=5, type=int)
+parser.add_argument('--n-test', default=5, type=int)
+parser.add_argument('--k-train', default=20, type=int)
 parser.add_argument('--k-test', default=5, type=int)
-parser.add_argument('--q-train', default=5, type=int)
+parser.add_argument('--q-train', default=15, type=int)
 parser.add_argument('--q-test', default=1, type=int)
 parser.add_argument('--start_epoch', default=1, type=int)
 parser.add_argument('--weights_path', type=str)
@@ -61,6 +60,7 @@ param_str = f'{args.dataset}_nt={args.n_train}_kt={args.k_train}_qt={args.q_trai
             f'nv={args.n_test}_kv={args.k_test}_qv={args.q_test}'
 
 print(param_str)
+setup_dirs(param_str)
 
 ###################
 # Create datasets #
@@ -83,8 +83,9 @@ evaluation_taskloader = DataLoader(
 #########
 model = get_few_shot_encoder(num_input_channels)
 model.to(device, dtype=torch.double)
-model.load_state_dict(torch.load(args.weights_path))
-print(f'Loaded weights from {args.weights_path}')
+if args.weights_path is not None:
+    model.load_state_dict(torch.load(args.weights_path), map_location=torch.device(device))
+    print(f'Loaded weights from {args.weights_path}')
 
 ############
 # Training #
@@ -115,11 +116,11 @@ callbacks = [
         distance=args.distance
     ),
     ModelCheckpoint(
-        filepath=PATH + f'/models/proto_nets/{param_str}.pth',
+        filepath=PATH + f'/models/proto_nets/{param_str}/baseline_{param_str}.pth',
         monitor=f'val_{args.n_test}-shot_{args.k_test}-way_acc'
     ),
     LearningRateScheduler(schedule=lr_schedule),
-    CSVLogger(PATH + f'/models/proto_nets/{param_str}.csv'),
+    CSVLogger(PATH + f'/models/proto_nets/{param_str}/baseline_logs_{param_str}.csv')
 ]
 
 fit(
