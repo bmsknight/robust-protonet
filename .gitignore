@@ -131,6 +131,10 @@ dmypy.json
 # dataset
 data/
 
+# models & logs
+few_shot/models/
+few_shot/logs/
+
 # IDE
 .vscode
 
