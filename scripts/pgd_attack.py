@@ -94,7 +94,10 @@ for batch_index, batch in enumerate(tqdm(evaluation_taskloader)):
     y_pred = model(queries)
     count += y_pred.shape[0]
     total_clean_acc += categorical_accuracy(y, y_pred) * y_pred.shape[0]
+    print(queries.shape, y.shape)
     adv_query = atk(queries, y)
+    print(adv_query.shape)
+    sys.exit()
     y_pred_adv = model(adv_query)
     total_adv_acc += categorical_accuracy(y, y_pred_adv) * y_pred_adv.shape[0]
 

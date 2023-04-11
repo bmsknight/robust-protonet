@@ -53,8 +53,10 @@ def proto_net_episode(model: Module,
         model.eval()
 
     # Embed all samples
-    adv_x = attack(x, y, model, atk, train)
-    embeddings = model(adv_x.to(device))
+    xq = x[n_shot * k_way:]
+    adv_x = attack(xq, y, model, atk, train)
+    x = torch.concat((x[:n_shot*k_way], adv_x), 0)
+    embeddings = model(x.to(device))
     # embeddings = model(x.to(device))
 
     # Samples are ordered by the NShotWrapper class as follows:
@@ -144,8 +146,10 @@ def proto_net_sup_contrast_episode(model: Module,
         model.eval()
 
     # Embed all samples
-    adv_x = attack(x, y, model, atk, train)
-    embeddings = model(adv_x.to(device))
+    xq = x[n_shot * k_way:]
+    adv_x = attack(xq, y, model, atk, train)
+    x = torch.concat((x[:n_shot*k_way], adv_x), 0)
+    embeddings = model(x.to(device))
     # embeddings = model(x.to(device))
 
     # Samples are ordered by the NShotWrapper class as follows:

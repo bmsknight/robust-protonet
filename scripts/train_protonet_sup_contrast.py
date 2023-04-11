@@ -87,13 +87,13 @@ evaluation_taskloader = DataLoader(
 # Model #
 #########
 model = get_few_shot_encoder(num_input_channels)
-model.to(device, dtype=torch.double)
+model.to(device, dtype=torch.float)
 if args.weights_path is not None:
     model.load_state_dict(torch.load(args.weights_path), map_location=torch.device(device))
     print(f'Loaded weights from {args.weights_path}')
 
 proj_head = SupConProjHead(dim_in=1600, feat_dim=args.contrast_feature_dim, head=args.contrast_head)
-proj_head.to(device, dtype=torch.double)
+proj_head.to(device, dtype=torch.float)
 if args.proj_weights_path is not None:
     proj_head.load_state_dict(torch.load(args.proj_weights_path))
     print(f'Loaded projection head weights from {args.proj_weights_path}')
@@ -128,15 +128,15 @@ callbacks = [
         distance=args.distance
     ),
     ModelCheckpoint(
-        filepath=PATH + f'/models/proto_nets/{param_str}/contrast_{param_str}.pth',
-        proj_filepath=PATH + f'/models/proto_nets/{param_str}/contrast_{param_str}_proj.pth',
+        filepath=PATH + f'/models/proto_nets/{param_str}/contrast_adv_train1.pth',
+        proj_filepath=PATH + f'/models/proto_nets/{param_str}/contrast_adv_train1_proj.pth',
         proj_model=proj_head,
         monitor=f'val_{args.n_test}-shot_{args.k_test}-way_acc',
         verbose=1,
         save_best_only=True
     ),
     LearningRateScheduler(schedule=lr_schedule),
-    CSVLogger(filename=PATH + f'/models/proto_nets/{param_str}/contrast_logs_{param_str}.csv')
+    CSVLogger(filename=PATH + f'/models/proto_nets/{param_str}/contrast_logs_adv_train1.csv')
 ]
 
 # Create PGD Attack Object

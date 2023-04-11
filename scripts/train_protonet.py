@@ -83,7 +83,7 @@ evaluation_taskloader = DataLoader(
 # Model #
 #########
 model = get_few_shot_encoder(num_input_channels)
-model.to(device, dtype=torch.double)
+model.to(device, dtype=torch.float)
 if args.weights_path is not None:
     model.load_state_dict(torch.load(args.weights_path), map_location=torch.device(device))
     print(f'Loaded weights from {args.weights_path}')
@@ -117,11 +117,11 @@ callbacks = [
         distance=args.distance
     ),
     ModelCheckpoint(
-        filepath=PATH + f'/models/proto_nets/{param_str}/baseline_{param_str}.pth',
+        filepath=PATH + f'/models/proto_nets/{param_str}/baseline_adv_train1.pth',
         monitor=f'val_{args.n_test}-shot_{args.k_test}-way_acc'
     ),
     LearningRateScheduler(schedule=lr_schedule),
-    CSVLogger(PATH + f'/models/proto_nets/{param_str}/baseline_logs_{param_str}.csv')
+    CSVLogger(PATH + f'/models/proto_nets/{param_str}/baseline_logs_adv_train1.csv')
 ]
 
 # Create PGD Attack Object
