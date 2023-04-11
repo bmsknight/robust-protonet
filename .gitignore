@@ -132,6 +132,7 @@ dmypy.json
 data/
 
 # models & logs
+models/
 few_shot/models/
 few_shot/logs/
 

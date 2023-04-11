@@ -15,6 +15,7 @@ from few_shot.train import fit_contrast
 from few_shot.utils import setup_dirs, SupConLoss
 from torch.optim import Adam
 from torch.utils.data import DataLoader
+from torchattacks import PGD
   
 from config import PATH
 
@@ -138,6 +139,10 @@ callbacks = [
     CSVLogger(filename=PATH + f'/models/proto_nets/{param_str}/contrast_logs_{param_str}.csv')
 ]
 
+# Create PGD Attack Object
+atk = PGD(model, eps=8 / 255, alpha=2 / 225, steps=20, random_start=True)
+atk.set_normalization_used(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+
 fit_contrast(
     model,
     optimiser,
@@ -150,5 +155,5 @@ fit_contrast(
     fit_function=proto_net_sup_contrast_episode,
     start_epoch=args.start_epoch,
     fit_function_kwargs={'n_shot': args.n_train, 'k_way': args.k_train, 'q_queries': args.q_train, 'train': True,
-                         'distance': args.distance, 'proj_head': proj_head, 'contrast_loss_fn': contrast_loss_fn},
+                         'distance': args.distance, 'proj_head': proj_head, 'contrast_loss_fn': contrast_loss_fn, 'atk':atk},
 )

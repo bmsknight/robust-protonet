@@ -15,6 +15,7 @@ from few_shot.train import fit
 from few_shot.utils import setup_dirs
 from torch.optim import Adam
 from torch.utils.data import DataLoader
+from torchattacks import PGD
   
 from config import PATH
 
@@ -123,6 +124,10 @@ callbacks = [
     CSVLogger(PATH + f'/models/proto_nets/{param_str}/baseline_logs_{param_str}.csv')
 ]
 
+# Create PGD Attack Object
+atk = PGD(model, eps=8 / 255, alpha=2 / 225, steps=20, random_start=True)
+atk.set_normalization_used(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+
 fit(
     model,
     optimiser,
@@ -135,5 +140,5 @@ fit(
     fit_function=proto_net_episode,
     start_epoch=args.start_epoch,
     fit_function_kwargs={'n_shot': args.n_train, 'k_way': args.k_train, 'q_queries': args.q_train, 'train': True,
-                         'distance': args.distance},
+                         'distance': args.distance, 'atk':atk},
 )

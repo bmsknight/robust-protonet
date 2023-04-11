@@ -1,11 +1,20 @@
 import torch
+import copy
 from torch.optim import Optimizer
 from torch.nn import Module
 from typing import Callable
-
 from few_shot.utils import pairwise_distances
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+
+def attack(x, y, model, atk, train):
+    if train and atk.steps != 7:
+        atk.steps = 7
+    model_copied = copy.deepcopy(model)
+    model_copied.eval()
+    atk.model = model_copied
+    adv_x = atk(x, y)
+    return adv_x
 
 def proto_net_episode(model: Module,
                       optimiser: Optimizer,
@@ -16,7 +25,8 @@ def proto_net_episode(model: Module,
                       k_way: int,
                       q_queries: int,
                       distance: str,
-                      train: bool):
+                      train: bool,
+                      atk):
     """Performs a single training episode for a Prototypical Network.
 
     # Arguments
@@ -43,7 +53,9 @@ def proto_net_episode(model: Module,
         model.eval()
 
     # Embed all samples
-    embeddings = model(x.to(device))
+    adv_x = attack(x, y, model, atk, train)
+    embeddings = model(adv_x.to(device))
+    # embeddings = model(x.to(device))
 
     # Samples are ordered by the NShotWrapper class as follows:
     # k lots of n support samples from a particular class
@@ -102,7 +114,8 @@ def proto_net_sup_contrast_episode(model: Module,
                                    k_way: int,
                                    q_queries: int,
                                    distance: str,
-                                   train: bool):
+                                   train: bool,
+                                   atk):
     """Performs a Supervised Contrastive Learning based single training episode for a Prototypical Network.
 
     # Arguments
@@ -131,7 +144,9 @@ def proto_net_sup_contrast_episode(model: Module,
         model.eval()
 
     # Embed all samples
-    embeddings = model(x)
+    adv_x = attack(x, y, model, atk, train)
+    embeddings = model(adv_x.to(device))
+    # embeddings = model(x.to(device))
 
     # Samples are ordered by the NShotWrapper class as follows:
     # k lots of n support samples from a particular class
