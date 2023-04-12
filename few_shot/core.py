@@ -6,10 +6,6 @@ import torch
 from few_shot.metrics import categorical_accuracy
 from few_shot.callbacks import Callback
 
-np.random.seed(0) 
-torch.manual_seed(0) 
-torch.backends.cudnn.benchmark=True 
-torch.backends.cudnn.deterministic=True
 
 class NShotTaskSampler(Sampler):
     def __init__(self,
@@ -27,7 +23,7 @@ class NShotTaskSampler(Sampler):
         samples are from the support set while the remaining q * k samples are from the query set.
 
         The support and query sets are sampled such that they are disjoint i.e. do not contain overlapping samples.
-  
+
         # Arguments
             dataset: Instance of torch.utils.data.Dataset from which to draw samples
             episodes_per_epoch: Arbitrary number of batches of n-shot tasks to generate in one epoch
@@ -84,7 +80,8 @@ class NShotTaskSampler(Sampler):
                     query = df[(df['class_id'] == k) & (~df['id'].isin(support_k[k]['id']))].sample(self.q)
                     for i, q in query.iterrows():
                         batch.append(q['id'])
-            yield np.stack(batch)  # batch of (k*n + k*q) image ids for support-set and query-set 
+
+            yield np.stack(batch)
 
 
 class EvaluateFewShot(Callback):
@@ -176,8 +173,7 @@ def prepare_nshot_task(n: int, k: int, q: int) -> Callable:
         x, y = batch
         x = x.float().cuda()
         # Create dummy 0-(num_classes - 1) label
-        y = create_nshot_task_label(k, q).to(device)
-        # y = create_nshot_task_label(k, q).cuda()
+        y = create_nshot_task_label(k, q).cuda()
         return x, y
 
     return prepare_nshot_task_

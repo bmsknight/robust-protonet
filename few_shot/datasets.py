@@ -1,5 +1,3 @@
-import sys
-sys.path.append('.')
 from torch.utils.data import Dataset
 import torch
 from PIL import Image
@@ -206,29 +204,3 @@ class DummyDataset(Dataset):
     def __getitem__(self, item):
         class_id = item % self.n_classes
         return np.array([item] + [class_id]*self.n_features, dtype=np.float), float(class_id)
-
-
-if __name__=='__main__':
-    dataset = MiniImageNet('evaluation')
-    print(dataset.df)
-    x, y = dataset.__getitem__(1345)
-    print(x.shape, y)
-    k = 5
-    n = 2
-    q = 1
-    episode_classes = np.random.choice(dataset.df['class_id'].unique(), size=k, replace=False)
-    df = dataset.df[dataset.df['class_id'].isin(episode_classes)]
-    print(episode_classes, '\n', df)
-
-    batch = []
-    support_k = {k: None for k in episode_classes}
-    for k in episode_classes:
-        # Select support examples
-        support = df[df['class_id'] == k].sample(n)
-        support_k[k] = support
-
-        for i, s in support.iterrows():
-            batch.append(s['id']) 
-    print('batch:\n', batch)
-    print(support_k[k])
-

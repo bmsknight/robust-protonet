@@ -1,22 +1,10 @@
 import torch
-import copy
 from torch.optim import Optimizer
 from torch.nn import Module
 from typing import Callable
+
 from few_shot.utils import pairwise_distances
 
-device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-
-def attack(x, y, model, atk, train):
-    if train and atk.steps != 7:
-        atk.steps = 7
-    elif not train and atk.steps != 20:
-        atk.steps = 20
-    model_copied = copy.deepcopy(model)
-    model_copied.eval()
-    atk.model = model_copied
-    adv_x = atk(x, y)
-    return adv_x
 
 def proto_net_episode(model: Module,
                       optimiser: Optimizer,
@@ -55,11 +43,7 @@ def proto_net_episode(model: Module,
         model.eval()
 
     # Embed all samples
-    xq = x[n_shot * k_way:]
-    adv_x = attack(xq, y, model, atk, train)
-    x = torch.concat((x[:n_shot*k_way], adv_x), 0)
-    embeddings = model(x.to(device))
-    # embeddings = model(x.to(device))
+    embeddings = model(x)
 
     # Samples are ordered by the NShotWrapper class as follows:
     # k lots of n support samples from a particular class

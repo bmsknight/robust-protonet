@@ -130,3 +130,10 @@ dmypy.json
 
 #models
 *.pth
+models/
+
+#data
+data/
+
+#vscode
+.vscode
