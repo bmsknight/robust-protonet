@@ -77,10 +77,10 @@ def proto_net_episode(model: Module,
         loss_adv = loss_fn(adv_log_p_y, y)
 
         loss = loss_clean + 0.5 * loss_adv
-        print("joint train is called")
+        # print("joint train is called")
     else:
         loss = loss_clean
-        print("non joint train")
+        # print("non joint train")
 
     # Prediction probabilities are softmax over distances
     y_pred = (-distances).softmax(dim=1)
