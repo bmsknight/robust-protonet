@@ -16,9 +16,7 @@ def proto_net_episode(model: Module,
                       q_queries: int,
                       distance: str,
                       train: bool,
-                      is_contrast_model: bool = False,
-                      proj_head: Module = None,
-                      contrast_loss_fn: Callable = None):
+                      is_he_model: bool = False):
     """Performs a single training episode for a Prototypical Network.
 
     # Arguments
@@ -37,13 +35,9 @@ def proto_net_episode(model: Module,
         loss: Loss of the Prototypical Network on this task
         y_pred: Predicted class probabilities for the query set on this task
     """
-    if is_contrast_model:
-        assert proj_head is not None and contrast_loss_fn is not None, 'Can not train with contrastive loss!'
     if train:
         # Zero gradients
         model.train()
-        if is_contrast_model:
-            proj_head.train()
         optimiser.zero_grad()
     else:
         model.eval()
@@ -65,7 +59,7 @@ def proto_net_episode(model: Module,
     support = embeddings[:n_shot*k_way]
     queries = embeddings[n_shot*k_way:]
     # For HE model we need to rescale the prototypes to ensure they are on the manifold
-    prototypes = compute_prototypes(support, k_way, n_shot)
+    prototypes = compute_prototypes(support, k_way, n_shot, rescale=is_he_model)
 
     # Calculate squared distances between all queries and all prototypes
     # Output should have shape (q_queries * k_way, k_way) = (num_queries, k_way)
@@ -92,13 +86,6 @@ def proto_net_episode(model: Module,
     y_pred = (-distances).softmax(dim=1)
 
     if train:
-        if is_contrast_model:
-            # Calculate sup contrastive loss
-            features = proj_head(support)
-            features = features.view(k_way, n_shot, -1)
-            labels = torch.arange(0, k_way).long().to('cuda')
-            contrast_loss = contrast_loss_fn(features, labels)    
-            loss += contrast_loss 
         # Take gradient step
         loss.backward()
         optimiser.step()
@@ -108,7 +95,7 @@ def proto_net_episode(model: Module,
     return loss, y_pred
 
 
-def compute_prototypes(support: torch.Tensor, k: int, n: int) -> torch.Tensor:
+def compute_prototypes(support: torch.Tensor, k: int, n: int, rescale: bool = False) -> torch.Tensor:
     """Compute class prototypes from support samples.
 
     # Arguments
@@ -124,4 +111,7 @@ def compute_prototypes(support: torch.Tensor, k: int, n: int) -> torch.Tensor:
     # along that dimension to generate the "prototypes" for each class
     class_prototypes = support.reshape(k, n, -1).mean(dim=1)
 
+    # rescale the prototype embedding to be in the manifold for Hypersphere Embedding
+    if rescale:
+        class_prototypes = torch.nn.functional.normalize(class_prototypes, p=2, dim=1)
     return class_prototypes
