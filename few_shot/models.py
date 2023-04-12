@@ -291,3 +291,23 @@ class AttentionLSTM(nn.Module):
         h = h_hat + queries
 
         return h
+
+class SupConProjHead(nn.Module):
+    """Supervised contrastive projection head"""
+    def __init__(self, dim_in, head='mlp'):
+        super(SupConProjHead, self).__init__()
+        if head == 'linear':
+            self.head = nn.Linear(dim_in, dim_in)
+        elif head == 'mlp':
+            self.head = nn.Sequential(
+                nn.Linear(dim_in, dim_in),
+                nn.ReLU(inplace=True),
+                nn.Linear(dim_in, dim_in)
+            )
+        else:
+            raise NotImplementedError(
+                'head not supported: {}'.format(head))
+
+    def forward(self, x):
+        feat = F.normalize(self.head(x), dim=1)
+        return feat
