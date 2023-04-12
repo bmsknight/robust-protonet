@@ -57,6 +57,7 @@ def batch_metrics(model: Module, y_pred: torch.Tensor, y: torch.Tensor, metrics:
 def fit(model: Module, optimiser: Optimizer, loss_fn: Callable, epochs: int, dataloader: DataLoader,
         prepare_batch: Callable, metrics: List[Union[str, Callable]] = None, callbacks: List[Callback] = None,
         verbose: bool = True, fit_function: Callable = gradient_step, attack_fn: Callable = None,
+        adv_train_type: str = None,
         fit_function_kwargs: dict = {}):
     """Function to abstract away training loop.
 
@@ -113,7 +114,10 @@ def fit(model: Module, optimiser: Optimizer, loss_fn: Callable, epochs: int, dat
             x, y = prepare_batch(batch)
             if attack_fn is not None:
                 adv_x = attack_fn(x, y, model)
-                loss, y_pred = fit_function(model, optimiser, loss_fn, adv_x, y, **fit_function_kwargs)
+                if adv_train_type == "joint":
+                    loss, y_pred = fit_function(model, optimiser, loss_fn, [x, adv_x], y, **fit_function_kwargs)
+                else:
+                    loss, y_pred = fit_function(model, optimiser, loss_fn, adv_x, y, **fit_function_kwargs)
             else:
                 loss, y_pred = fit_function(model, optimiser, loss_fn, x, y, **fit_function_kwargs)
             batch_logs['loss'] = loss.item()

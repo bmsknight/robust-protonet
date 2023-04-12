@@ -1,7 +1,7 @@
 import torch
 from torch.optim import Optimizer
 from torch.nn import Module
-from typing import Callable
+from typing import Callable, Union
 
 from few_shot.utils import pairwise_distances
 
@@ -9,7 +9,7 @@ from few_shot.utils import pairwise_distances
 def proto_net_episode(model: Module,
                       optimiser: Optimizer,
                       loss_fn: Callable,
-                      x: torch.Tensor,
+                      x: Union[torch.Tensor,list],
                       y: torch.Tensor,
                       n_shot: int,
                       k_way: int,
@@ -48,6 +48,14 @@ def proto_net_episode(model: Module,
     else:
         model.eval()
 
+    if type(x) == list:
+        is_joint_adv_training = True
+        x_adv = x[1]
+        x = x[0]
+    else:
+        is_joint_adv_training = False
+        x_adv = None
+
     # Embed all samples
     embeddings = model(x)
 
@@ -65,7 +73,20 @@ def proto_net_episode(model: Module,
 
     # Calculate log p_{phi} (y = k | x)
     log_p_y = (-distances).log_softmax(dim=1)
-    loss = loss_fn(log_p_y, y)
+    loss_clean = loss_fn(log_p_y, y)
+
+    if is_joint_adv_training:
+        adv_embeddings = model(x_adv)
+        adv_queries = adv_embeddings[n_shot * k_way:]
+        adv_distance = pairwise_distances(adv_queries, prototypes, distance)
+        adv_log_p_y = (-adv_distance).log_softmax(dim=1)
+        loss_adv = loss_fn(adv_log_p_y, y)
+
+        loss = loss_clean + 0.5 * loss_adv
+        # print("joint train is called")
+    else:
+        loss = loss_clean
+        # print("non joint train")
 
     # Prediction probabilities are softmax over distances
     y_pred = (-distances).softmax(dim=1)
