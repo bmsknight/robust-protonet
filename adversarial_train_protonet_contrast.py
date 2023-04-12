@@ -11,10 +11,10 @@ from few_shot.attack import PGDAttackWrapperForTraining
 from few_shot.callbacks import *
 from few_shot.core import NShotTaskSampler, EvaluateFewShot, prepare_nshot_task
 from few_shot.datasets import OmniglotDataset, MiniImageNet
-from few_shot.models import get_few_shot_encoder
+from few_shot.models import get_few_shot_encoder, SupConProjHead
 from few_shot.proto import proto_net_episode
 from few_shot.train import fit
-from few_shot.utils import setup_dirs
+from few_shot.utils import setup_dirs, SupConLoss
 
 setup_dirs()
 assert torch.cuda.is_available()
@@ -79,6 +79,9 @@ evaluation_taskloader = DataLoader(
 model = get_few_shot_encoder(num_input_channels)
 model.to(device, dtype=torch.float)
 
+proj_head = SupConProjHead(dim_in=1600, feat_dim=args.contrast_feature_dim, head=args.contrast_head)
+proj_head.to(device, dtype=torch.float)
+
 pgd_attack = PGDAttackWrapperForTraining(model, distance=args.distance, n_shot=args.n_train, k_way=args.k_train,
                                          is_he_model=False, eps=8 / 255, alpha=2 / 255, steps=7, random_start=True,
                                          attack_type=args.attack_type)
@@ -89,6 +92,7 @@ pgd_attack = PGDAttackWrapperForTraining(model, distance=args.distance, n_shot=a
 print(f'Training Prototypical network on {args.dataset}...')
 optimiser = Adam(model.parameters(), lr=1e-3)
 loss_fn = torch.nn.NLLLoss().cuda()
+contrast_loss_fn = SupConLoss().cuda()
 
 
 def lr_schedule(epoch, lr):
@@ -111,11 +115,11 @@ callbacks = [
         distance=args.distance
     ),
     ModelCheckpoint(
-        filepath=PATH + f'/models/proto_nets/adv_{param_str}.pth',
+        filepath=PATH + f'/models/proto_nets/adv_sup_contrast.pth',
         monitor=f'val_{args.n_test}-shot_{args.k_test}-way_acc'
     ),
     LearningRateScheduler(schedule=lr_schedule),
-    CSVLogger(PATH + f'/logs/proto_nets/adv_{param_str}.csv'),
+    CSVLogger(PATH + f'/logs/proto_nets/adv_sup_contrast.csv'),
 ]
 
 fit(
@@ -130,5 +134,5 @@ fit(
     fit_function=proto_net_episode,
     attack_fn=pgd_attack,
     fit_function_kwargs={'n_shot': args.n_train, 'k_way': args.k_train, 'q_queries': args.q_train, 'train': True,
-                         'distance': args.distance},
+                         'distance': args.distance, 'proj_head': proj_head, 'contrast_loss_fn': contrast_loss_fn, 'is_contrast_model': True}
 )
