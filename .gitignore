@@ -128,16 +128,5 @@ dmypy.json
 # Pyre type checker
 .pyre/
 
-# dataset
-data/
-
-# models & logs
-models/
-few_shot/models/
-few_shot/logs/
-
-# IDE
-.vscode
-
-# Git
-.gitignore
+#models
+*.pth

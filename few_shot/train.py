@@ -2,11 +2,12 @@
 The `fit` function in this file implements a slightly modified version
 of the Keras `model.fit()` API.
 """
-import torch
-from torch.optim import Optimizer
-from torch.nn import Module
-from torch.utils.data import DataLoader
 from typing import Callable, List, Union
+
+import torch
+from torch.nn import Module
+from torch.optim import Optimizer
+from torch.utils.data import DataLoader
 
 from few_shot.callbacks import DefaultCallback, ProgressBarLogger, CallbackList, Callback
 from few_shot.metrics import NAMED_METRICS
@@ -55,7 +56,8 @@ def batch_metrics(model: Module, y_pred: torch.Tensor, y: torch.Tensor, metrics:
 
 def fit(model: Module, optimiser: Optimizer, loss_fn: Callable, epochs: int, dataloader: DataLoader,
         prepare_batch: Callable, metrics: List[Union[str, Callable]] = None, callbacks: List[Callback] = None,
-        verbose: bool =True, fit_function: Callable = gradient_step, start_epoch: int = 1, fit_function_kwargs: dict = {}):
+        verbose: bool = True, fit_function: Callable = gradient_step, attack_fn: Callable = None,
+        fit_function_kwargs: dict = {}):
     """Function to abstract away training loop.
 
     The benefit of this function is that allows training scripts to be much more readable and allows for easy re-use of
@@ -99,7 +101,7 @@ def fit(model: Module, optimiser: Optimizer, loss_fn: Callable, epochs: int, dat
 
     callbacks.on_train_begin()
 
-    for epoch in range(start_epoch, epochs+1):
+    for epoch in range(1, epochs + 1):
         callbacks.on_epoch_begin(epoch)
 
         epoch_logs = {}
@@ -110,8 +112,11 @@ def fit(model: Module, optimiser: Optimizer, loss_fn: Callable, epochs: int, dat
             callbacks.on_batch_begin(batch_index, batch_logs)
 
             x, y = prepare_batch(batch)
-
-            loss, y_pred = fit_function(model, optimiser, loss_fn, x, y, **fit_function_kwargs)
+            if attack_fn is not None:
+                adv_x = attack_fn(x, y, model)
+                loss, y_pred = fit_function(model, optimiser, loss_fn, adv_x, y, **fit_function_kwargs)
+            else:
+                loss, y_pred = fit_function(model, optimiser, loss_fn, x, y, **fit_function_kwargs)
             batch_logs['loss'] = loss.item()
             batch_logs['contrast_loss'] = 0
             batch_logs['total_loss'] = 0

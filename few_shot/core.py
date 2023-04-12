@@ -173,10 +173,8 @@ def prepare_nshot_task(n: int, k: int, q: int) -> Callable:
 
         TODO: Move to arbitrary device
         """
-        device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-        x, y = batch  # torch.Size([kn+kq, 3, 84, 84]) torch.Size([kn+kq])
-        x = x.float().to(device)
-        # x = x.double().cuda()
+        x, y = batch
+        x = x.float().cuda()
         # Create dummy 0-(num_classes - 1) label
         y = create_nshot_task_label(k, q).to(device)
         # y = create_nshot_task_label(k, q).cuda()

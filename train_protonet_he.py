@@ -1,44 +1,37 @@
 """
 Reproduce Omniglot results of Snell et al Prototypical networks.
 """
-import sys
-sys.path.append('.')
 import argparse
-import torch
 
 from few_shot.callbacks import *
 from few_shot.core import NShotTaskSampler, EvaluateFewShot, prepare_nshot_task
 from few_shot.datasets import OmniglotDataset, MiniImageNet
-from few_shot.models import get_few_shot_encoder
+from few_shot.models import get_few_shot_he_encoder
 from few_shot.proto import proto_net_episode
 from few_shot.train import fit
 from few_shot.utils import setup_dirs
 from torch.optim import Adam
 from torch.utils.data import DataLoader
-from torchattacks import PGD
-  
+
 from config import PATH
 
-# assert torch.cuda.is_available()
-# device = torch.device('cuda')
-device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-if torch.cuda.is_available():
-    torch.backends.cudnn.benchmark = True
+setup_dirs()
+assert torch.cuda.is_available()
+device = torch.device('cuda')
+torch.backends.cudnn.benchmark = True
 
 ##############
 # Parameters #
 ##############
 parser = argparse.ArgumentParser()
 parser.add_argument('--dataset', default="miniImageNet")
-parser.add_argument('--distance', default='l2')
+parser.add_argument('--distance', default='cosine')
 parser.add_argument('--n-train', default=5, type=int)
 parser.add_argument('--n-test', default=5, type=int)
 parser.add_argument('--k-train', default=20, type=int)
 parser.add_argument('--k-test', default=5, type=int)
 parser.add_argument('--q-train', default=15, type=int)
 parser.add_argument('--q-test', default=1, type=int)
-parser.add_argument('--start_epoch', default=1, type=int)
-parser.add_argument('--weights_path', type=str)
 args = parser.parse_args()
 
 evaluation_episodes = 1000
@@ -48,11 +41,13 @@ if args.dataset == 'omniglot':
     n_epochs = 40
     dataset_class = OmniglotDataset
     num_input_channels = 1
+    final_layer_size = 64
     drop_lr_every = 20
 elif args.dataset == 'miniImageNet':
     n_epochs = 80
     dataset_class = MiniImageNet
     num_input_channels = 3
+    final_layer_size = 1600
     drop_lr_every = 40
 else:
     raise (ValueError, 'Unsupported dataset')
@@ -61,7 +56,6 @@ param_str = f'{args.dataset}_nt={args.n_train}_kt={args.k_train}_qt={args.q_trai
             f'nv={args.n_test}_kv={args.k_test}_qv={args.q_test}'
 
 print(param_str)
-setup_dirs(param_str)
 
 ###################
 # Create datasets #
@@ -82,23 +76,16 @@ evaluation_taskloader = DataLoader(
 #########
 # Model #
 #########
-model = get_few_shot_encoder(num_input_channels)
-model.to(device, dtype=torch.float)
-if args.weights_path is not None:
-    model.load_state_dict(torch.load(args.weights_path), map_location=torch.device(device))
-    print(f'Loaded weights from {args.weights_path}')
+model = get_few_shot_he_encoder(num_input_channels, final_layer_size)
+model.to(device, dtype=torch.double)
 
 ############
 # Training #
 ############
 print(f'Training Prototypical network on {args.dataset}...')
 optimiser = Adam(model.parameters(), lr=1e-3)
-# loss_fn = torch.nn.NLLLoss().cuda()
-loss_fn = torch.nn.NLLLoss().to(device)
+loss_fn = torch.nn.NLLLoss().cuda()
 
-# Create PGD Attack Object
-atk = PGD(model, eps=8 / 255, alpha=2 / 255, steps=20, random_start=True)
-atk.set_normalization_used(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
 
 def lr_schedule(epoch, lr):
     # Drop lr every 2000 episodes
@@ -118,14 +105,14 @@ callbacks = [
         taskloader=evaluation_taskloader,
         prepare_batch=prepare_nshot_task(args.n_test, args.k_test, args.q_test),
         distance=args.distance,
-        atk=atk
+        is_he_model=True
     ),
     ModelCheckpoint(
-        filepath=PATH + f'/models/proto_nets/{param_str}/baseline_adv_train1.pth',
+        filepath=PATH + f'/models/proto_nets/{param_str}.pth',
         monitor=f'val_{args.n_test}-shot_{args.k_test}-way_acc'
     ),
     LearningRateScheduler(schedule=lr_schedule),
-    CSVLogger(PATH + f'/models/proto_nets/{param_str}/baseline_logs_adv_train1.csv')
+    CSVLogger(PATH + f'/logs/proto_nets/{param_str}.csv'),
 ]
 
 fit(
@@ -138,7 +125,6 @@ fit(
     callbacks=callbacks,
     metrics=['categorical_accuracy'],
     fit_function=proto_net_episode,
-    start_epoch=args.start_epoch,
     fit_function_kwargs={'n_shot': args.n_train, 'k_way': args.k_train, 'q_queries': args.q_train, 'train': True,
-                         'distance': args.distance, 'atk':atk}
+                         'distance': args.distance, 'is_he_model': True},
 )
