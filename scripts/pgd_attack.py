@@ -76,16 +76,16 @@ model = ProtoNetWrapper(embedding_model=emb_model, distance=args.distance, n_sho
 model.to(device, dtype=torch.float)
 
 # attack
-atk = PGD(model, eps=8 / 255, alpha=2 / 225, steps=10, random_start=True)
+atk = PGD(model, eps=8 / 255, alpha=2 / 255, steps=20, random_start=True)
 atk.set_normalization_used(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
-print(atk)
+print(atk, type(atk))
 
 # evaluate
 model.eval()
 total_clean_acc = 0
 total_adv_acc = 0
 count = 0
-for batch_index, batch in enumerate(tqdm(evaluation_taskloader)):
+for batch_index, batch in enumerate(evaluation_taskloader):
     x, y = prepare_batch(batch)
     support = x[:args.n_test * args.k_test]
     queries = x[args.n_test * args.k_test:]
@@ -96,8 +96,6 @@ for batch_index, batch in enumerate(tqdm(evaluation_taskloader)):
     total_clean_acc += categorical_accuracy(y, y_pred) * y_pred.shape[0]
     print(queries.shape, y.shape)
     adv_query = atk(queries, y)
-    print(adv_query.shape)
-    sys.exit()
     y_pred_adv = model(adv_query)
     total_adv_acc += categorical_accuracy(y, y_pred_adv) * y_pred_adv.shape[0]
 
