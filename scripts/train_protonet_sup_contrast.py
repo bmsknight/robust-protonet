@@ -107,6 +107,9 @@ optimiser = Adam(list(model.parameters()) + list(proj_head.parameters()), lr=1e-
 loss_fn = torch.nn.NLLLoss().to(device)
 contrast_loss_fn = SupConLoss().to(device)
 
+# Create PGD Attack Object
+atk = PGD(model, eps=8 / 255, alpha=2 / 225, steps=20, random_start=True)
+atk.set_normalization_used(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
 
 def lr_schedule(epoch, lr):
     # Drop lr every 2000 episodes
@@ -125,7 +128,8 @@ callbacks = [
         q_queries=args.q_test,
         taskloader=evaluation_taskloader,
         prepare_batch=prepare_nshot_task(args.n_test, args.k_test, args.q_test),
-        distance=args.distance
+        distance=args.distance,
+        atk=atk
     ),
     ModelCheckpoint(
         filepath=PATH + f'/models/proto_nets/{param_str}/contrast_adv_train1.pth',
@@ -138,10 +142,6 @@ callbacks = [
     LearningRateScheduler(schedule=lr_schedule),
     CSVLogger(filename=PATH + f'/models/proto_nets/{param_str}/contrast_logs_adv_train1.csv')
 ]
-
-# Create PGD Attack Object
-atk = PGD(model, eps=8 / 255, alpha=2 / 225, steps=20, random_start=True)
-atk.set_normalization_used(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
 
 fit_contrast(
     model,

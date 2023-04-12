@@ -10,6 +10,8 @@ device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 def attack(x, y, model, atk, train):
     if train and atk.steps != 7:
         atk.steps = 7
+    elif not train and atk.steps != 20:
+        atk.steps = 20
     model_copied = copy.deepcopy(model)
     model_copied.eval()
     atk.model = model_copied
@@ -146,26 +148,32 @@ def proto_net_sup_contrast_episode(model: Module,
         model.eval()
 
     # Embed all samples
-    xq = x[n_shot * k_way:]
+    xq = x[n_shot*k_way:]
+    # pass it to wrapper and wrap model
     adv_x = attack(xq, y, model, atk, train)
     x = torch.concat((x[:n_shot*k_way], adv_x), 0)
+    # x = torch.concat((x, adv_x), 0)
     embeddings = model(x.to(device))
-    # embeddings = model(x.to(device))
 
     # Samples are ordered by the NShotWrapper class as follows:
     # k lots of n support samples from a particular class
     # k lots of q query samples from those classes
     support = embeddings[:n_shot*k_way]  # (nk, dim)
     queries = embeddings[n_shot*k_way:]
+    # queries = embeddings[n_shot*k_way:n_shot*k_way+q_queries*k_way]
+    # queries_adv = embeddings[n_shot*k_way+q_queries*k_way:]
     prototypes = compute_prototypes(support, k_way, n_shot)
 
     # Calculate squared distances between all queries and all prototypes
     # Output should have shape (q_queries * k_way, k_way) = (num_queries, k_way)
     distances = pairwise_distances(queries, prototypes, distance)
+    # distances_adv = pairwise_distances(queries_adv, prototypes, distance)
 
     # Calculate log p_{phi} (y = k | x)
     log_p_y = (-distances).log_softmax(dim=1)
-    loss = loss_fn(log_p_y, y)
+    # log_p_y_adv = (-distances_adv).log_softmax(dim=1)
+
+    loss = loss_fn(log_p_y, y) # + 0.5*loss_fn(log_p_y_adv, y)
 
     # Prediction probabilities are softmax over distances
     y_pred = (-distances).softmax(dim=1)
