@@ -26,6 +26,7 @@ torch.backends.cudnn.benchmark = True
 ##############
 parser = argparse.ArgumentParser()
 parser.add_argument('--dataset', default="miniImageNet")
+parser.add_argument('--attack-type', default="all")
 parser.add_argument('--distance', default='cosine')
 parser.add_argument('--n-train', default=5, type=int)
 parser.add_argument('--n-test', default=5, type=int)
@@ -81,7 +82,8 @@ model = get_few_shot_he_encoder(num_input_channels, final_layer_size)
 model.to(device, dtype=torch.float)
 
 pgd_attack = PGDAttackWrapperForTraining(model, distance=args.distance, n_shot=args.n_train, k_way=args.k_train,
-                                         is_he_model=True, eps=8 / 255, alpha=2 / 255, steps=7, random_start=True)
+                                         is_he_model=True, eps=8 / 255, alpha=2 / 255, steps=7, random_start=True,
+                                         attack_type=args.attack_type)
 
 ############
 # Training #
