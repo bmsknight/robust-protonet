@@ -81,7 +81,7 @@ model = ProtoNetWrapper(embedding_model=emb_model, distance=args.distance, n_sho
 model.to(device, dtype=torch.float)
 
 # attack
-atk = PGD(model, eps=8 / 255, alpha=2 / 225, steps=10, random_start=True)
+atk = PGD(model, eps=8 / 255, alpha=2 / 255, steps=10, random_start=True)
 atk.set_normalization_used(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
 print(atk)
 
