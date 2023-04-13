@@ -6,7 +6,7 @@ import argparse
 from few_shot.callbacks import *
 from few_shot.core import NShotTaskSampler, EvaluateFewShot, prepare_nshot_task
 from few_shot.datasets import OmniglotDataset, MiniImageNet
-from few_shot.models import get_few_shot_he_encoder, SupConProjHead
+from few_shot.models import get_few_shot_encoder, SupConProjHead
 from few_shot.proto import proto_net_episode_contrast
 from few_shot.train import fit
 from few_shot.utils import setup_dirs, SupConLoss
@@ -76,7 +76,7 @@ evaluation_taskloader = DataLoader(
 #########
 # Model #
 #########
-model = get_few_shot_he_encoder(num_input_channels, final_layer_size)
+model = get_few_shot_encoder(num_input_channels)
 model.to(device, dtype=torch.float)
 
 proj_head = SupConProjHead(dim_in=final_layer_size)

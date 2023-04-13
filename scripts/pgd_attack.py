@@ -46,7 +46,7 @@ num_input_channels = 3
 
 param_str = f'{args.dataset}_nt={args.n_train}_kt={args.k_train}_qt={args.q_train}_' \
             f'nv={args.n_test}_kv={args.k_test}_qv={args.q_test}'
-setup_dirs(param_str)
+setup_dirs()
 print(param_str)
 
 ###################

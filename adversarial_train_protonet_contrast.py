@@ -55,8 +55,7 @@ elif args.dataset == 'miniImageNet':
 else:
     raise (ValueError, 'Unsupported dataset')
 
-param_str = f'{args.dataset}_nt={args.n_train}_kt={args.k_train}_qt={args.q_train}_' \
-            f'nv={args.n_test}_kv={args.k_test}_qv={args.q_test}'
+param_str = f'{args.adv_train_type}'
 
 print(param_str)
 
@@ -118,11 +117,11 @@ callbacks = [
         distance=args.distance
     ),
     ModelCheckpoint(
-        filepath=PATH + f'/models/proto_nets/adv_contrast.pth',
+        filepath=PATH + f'/models/proto_nets/adv_contrast_{param_str}.pth',
         monitor=f'val_{args.n_test}-shot_{args.k_test}-way_acc'
     ),
     LearningRateScheduler(schedule=lr_schedule),
-    CSVLogger(PATH + f'/logs/proto_nets/adv_contrast.csv'),
+    CSVLogger(PATH + f'/logs/proto_nets/adv_contrast_{param_str}.csv'),
 ]
 
 fit(
