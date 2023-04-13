@@ -527,3 +527,19 @@ class LearningRateScheduler(Callback):
             if self.verbose:
                 print('Epoch {:5d}: setting learning rate'
                       ' of group {} to {:.4e}.'.format(epoch, i, new_lr))
+
+
+class ArcFaceMarginScheduler(Callback):
+
+    def __init__(self, arc_head, max_epoch, margin_type="linear"):
+        super(ArcFaceMarginScheduler,self).__init__()
+        self.arc_head = arc_head
+        max_margin = arc_head.margin
+        if margin_type == "linear":
+            self.margins = np.linspace(0,max_margin,num=max_epoch)
+        else:
+            raise ValueError("Margin type not implemented")
+
+    def on_epoch_begin(self, epoch, logs=None):
+        # epoch starts at 1
+        self.arc_head.margin = self.margins[epoch-1]

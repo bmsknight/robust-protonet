@@ -11,10 +11,6 @@ class ArcFace(torch.nn.Module):
         super(ArcFace, self).__init__()
         self.scale = s
         self.margin = margin
-        self.cos_m = math.cos(margin)
-        self.sin_m = math.sin(margin)
-        self.theta = math.cos(math.pi - margin)
-        self.sinmm = math.sin(math.pi - margin) * margin
         self.easy_margin = False
 
     def forward(self, iplogits: torch.Tensor, labels: torch.Tensor):
