@@ -65,7 +65,7 @@ prepare_batch = prepare_nshot_task(args.n_test, args.k_test, args.q_test)
 #########
 # Model #
 #########
-if args.model == "baseline" or args.model == "contrast":
+if "baseline" in args.model or "contrast" in args.model:
     emb_model = get_few_shot_encoder(num_input_channels)
     args.distance = "l2"
     model_str = args.model
@@ -94,7 +94,6 @@ for batch_index, batch in enumerate(evaluation_taskloader):
     y_pred = model(queries)
     count += y_pred.shape[0]
     total_clean_acc += categorical_accuracy(y, y_pred) * y_pred.shape[0]
-    print(queries.shape, y.shape)
     adv_query = atk(queries, y)
     y_pred_adv = model(adv_query)
     total_adv_acc += categorical_accuracy(y, y_pred_adv) * y_pred_adv.shape[0]
