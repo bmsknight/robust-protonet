@@ -294,7 +294,7 @@ class AttentionLSTM(nn.Module):
 
 class SupConProjHead(nn.Module):
     """Supervised contrastive projection head"""
-    def __init__(self, dim_in, head='mlp'):
+    def __init__(self, dim_in, head='linear'):
         super(SupConProjHead, self).__init__()
         if head == 'linear':
             self.head = nn.Linear(dim_in, dim_in)
@@ -311,3 +311,4 @@ class SupConProjHead(nn.Module):
     def forward(self, x):
         feat = F.normalize(self.head(x), dim=1)
         return feat
+    
