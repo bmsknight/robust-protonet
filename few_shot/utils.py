@@ -182,7 +182,7 @@ class SupConLoss(nn.Module):
             mask = mask.float().to(device)
 
         contrast_count = features.shape[1]  # n_views
-        contrast_feature = torch.cat(torch.unbind(features, dim=1), dim=0)  # torch.Size([2*bs, feat_dim=128])
+        contrast_feature = torch.cat(torch.unbind(features, dim=1), dim=0)  # torch.Size([n_views*bs, feat_dim=128])
         if self.contrast_mode == 'one':
             anchor_feature = features[:, 0]
             anchor_count = 1
