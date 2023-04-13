@@ -63,10 +63,10 @@ prepare_batch = prepare_nshot_task(args.n_test, args.k_test, args.q_test)
 #########
 # Model #
 #########
-if args.model == "baseline":
+if ("baseline" or "contrast") in args.model:
     emb_model = get_few_shot_encoder(num_input_channels)
     args.distance = "l2"
-    model_str = "baseline"
+    model_str = args.model
     is_he_model = False
 elif args.model == "he":
     emb_model = get_few_shot_he_encoder(num_input_channels,final_layer_size=1600)
