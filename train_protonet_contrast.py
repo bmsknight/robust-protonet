@@ -77,9 +77,9 @@ evaluation_taskloader = DataLoader(
 # Model #
 #########
 model = get_few_shot_he_encoder(num_input_channels, final_layer_size)
-model.to(device, dtype=torch.double)
+model.to(device, dtype=torch.float)
 
-proj_head = SupConProjHead(dim_in=1600, head=args.contrast_head)
+proj_head = SupConProjHead(dim_in=final_layer_size)
 proj_head.to(device, dtype=torch.float)
 
 ############

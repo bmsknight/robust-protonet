@@ -75,7 +75,7 @@ evaluation_taskloader = DataLoader(
 # Model #
 #########
 model = get_few_shot_encoder(num_input_channels)
-model.to(device, dtype=torch.double)
+model.to(device, dtype=torch.float)
 
 ############
 # Training #

@@ -82,7 +82,7 @@ evaluation_taskloader = DataLoader(
 model = get_few_shot_encoder(num_input_channels)
 model.to(device, dtype=torch.float)
 
-proj_head = SupConProjHead(dim_in=final_layer_size, head=args.contrast_head)
+proj_head = SupConProjHead(dim_in=final_layer_size)
 proj_head.to(device, dtype=torch.float)
 
 pgd_attack = PGDAttackWrapperForTraining(model, distance=args.distance, n_shot=args.n_train, k_way=args.k_train,
