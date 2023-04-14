@@ -210,7 +210,7 @@ def proto_net_episode_contrast(model: Module,
             queries = queries.view(k_way, q_queries, -1)
             prototypes = prototypes.view(k_way, 1, -1)
             inp = torch.cat((prototypes, queries), dim=1)  # (k_way, q_queries+1, dim) create features from prototypes and query elements
-            features = proj_head(inp)  # (k_way, q_queries+1, dim)
+            features = proj_head(inp.view(k_way*(1+q_queries), -1)).view(k_way, 1+q_queries, -1)  # (k_way, q_queries+1, dim)
             labels = torch.arange(0, k_way).long().to('cuda')
             contrast_loss = contrast_loss_fn(features, labels)    
             loss += contrast_loss 
