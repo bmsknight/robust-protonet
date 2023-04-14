@@ -297,12 +297,12 @@ class SupConProjHead(nn.Module):
     def __init__(self, dim_in, head='linear'):
         super(SupConProjHead, self).__init__()
         if head == 'linear':
-            self.head = nn.Linear(dim_in, 128)
+            self.head = nn.Linear(dim_in, 256)
         elif head == 'mlp':
             self.head = nn.Sequential(
                 nn.Linear(dim_in, dim_in),
                 nn.ReLU(inplace=True),
-                nn.Linear(dim_in, 128)
+                nn.Linear(dim_in, 256)
             )
         else:
             raise NotImplementedError(
