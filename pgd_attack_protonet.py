@@ -63,16 +63,21 @@ prepare_batch = prepare_nshot_task(args.n_test, args.k_test, args.q_test)
 #########
 # Model #
 #########
-if args.model == "baseline":
+if ("baseline" in args.model) or ("contrast" in args.model):
     emb_model = get_few_shot_encoder(num_input_channels)
     args.distance = "l2"
-    model_str = "baseline"
+    model_str = args.model
     is_he_model = False
-elif args.model == "he":
+elif ("he" in args.model) or ("arc" in args.model):
     emb_model = get_few_shot_he_encoder(num_input_channels,final_layer_size=1600)
     args.distance = "cosine"
-    model_str = "he"
-    is_he_model =True
+    model_str = args.model
+    is_he_model = True
+elif "fc" in args.model:
+    emb_model = get_few_shot_he_encoder(num_input_channels, final_layer_size=1600, is_he=False)
+    args.distance = "l2"
+    model_str = args.model
+    is_he_model = False
 else:
     raise ValueError("Unknown Model type")
 emb_model.load_state_dict(torch.load(PATH + f'/models/proto_nets/{model_str}.pth'))
