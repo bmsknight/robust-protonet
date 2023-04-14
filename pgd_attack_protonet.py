@@ -27,7 +27,7 @@ torch.backends.cudnn.deterministic = True
 ##############
 parser = argparse.ArgumentParser()
 parser.add_argument('--dataset', default="miniImageNet")
-parser.add_argument('--model', default="he")
+parser.add_argument('--model', default="baseline")
 parser.add_argument('--distance', default='l2')
 parser.add_argument('--n-train', default=5, type=int)
 parser.add_argument('--n-test', default=5, type=int)
@@ -63,16 +63,21 @@ prepare_batch = prepare_nshot_task(args.n_test, args.k_test, args.q_test)
 #########
 # Model #
 #########
-if args.model == "baseline":
+if ("baseline" in args.model) or ("contrast" in args.model):
     emb_model = get_few_shot_encoder(num_input_channels)
     args.distance = "l2"
-    model_str = "baseline"
+    model_str = args.model
     is_he_model = False
-elif args.model == "he":
+elif ("he" in args.model) or ("arc" in args.model):
     emb_model = get_few_shot_he_encoder(num_input_channels,final_layer_size=1600)
     args.distance = "cosine"
-    model_str = "he"
-    is_he_model =True
+    model_str = args.model
+    is_he_model = True
+elif "fc" in args.model:
+    emb_model = get_few_shot_he_encoder(num_input_channels, final_layer_size=1600, is_he=False)
+    args.distance = "l2"
+    model_str = args.model
+    is_he_model = False
 else:
     raise ValueError("Unknown Model type")
 emb_model.load_state_dict(torch.load(PATH + f'/models/proto_nets/{model_str}.pth'))
@@ -81,7 +86,7 @@ model = ProtoNetWrapper(embedding_model=emb_model, distance=args.distance, n_sho
 model.to(device, dtype=torch.float)
 
 # attack
-atk = PGD(model, eps=8 / 255, alpha=2 / 225, steps=10, random_start=True)
+atk = PGD(model, eps=8 / 255, alpha=2 / 255, steps=20, random_start=True)
 atk.set_normalization_used(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
 print(atk)
 

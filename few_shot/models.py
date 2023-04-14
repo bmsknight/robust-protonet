@@ -92,13 +92,14 @@ def get_few_shot_encoder(num_input_channels=1) -> nn.Module:
     )
 
 
-def get_few_shot_he_encoder(num_input_channels=1,final_layer_size=64) -> nn.Module:
+def get_few_shot_he_encoder(num_input_channels=1,final_layer_size=64, is_he=True) -> nn.Module:
     """Creates a few shot encoder as used in Matching and Prototypical Networks
 
     # Arguments:
         num_input_channels: Number of color channels the model expects input data to contain. Omniglot = 1,
             miniImageNet = 3
         final_layer_size: 64 for Omniglot, 1600 for miniImageNet
+        is_he: Flag to indicate if the last layer should be normalized (Hypersphere embedding)
     """
 
     class HENN(nn.Module):
@@ -113,6 +114,7 @@ def get_few_shot_he_encoder(num_input_channels=1,final_layer_size=64) -> nn.Modu
             )
 
             self.embedding_layer = nn.Linear(final_layer_size, final_layer_size, bias=False)
+            self.he_flag = is_he
 
             for m in self.modules():
                 if isinstance(m, nn.Conv2d):
@@ -123,10 +125,11 @@ def get_few_shot_he_encoder(num_input_channels=1,final_layer_size=64) -> nn.Modu
 
         def forward(self, x):
             x = self.feature_extractor(x)
-            # normalize the features
-            x = nn.functional.normalize(x, p=2, dim=1)
-            # normalize the weights
-            self.embedding_layer.weight.data = nn.functional.normalize(self.embedding_layer.weight.data, p=2, dim=1)
+            if self.he_flag:
+                # normalize the features
+                x = nn.functional.normalize(x, p=2, dim=1)
+                # normalize the weights
+                self.embedding_layer.weight.data = nn.functional.normalize(self.embedding_layer.weight.data, p=2, dim=1)
 
             return self.embedding_layer(x)
 

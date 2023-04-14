@@ -16,7 +16,8 @@ def proto_net_episode(model: Module,
                       q_queries: int,
                       distance: str,
                       train: bool,
-                      is_he_model: bool = False):
+                      is_he_model: bool = False,
+                      arc_head: Module = None):
     """Performs a single training episode for a Prototypical Network.
 
     # Arguments
@@ -64,6 +65,9 @@ def proto_net_episode(model: Module,
     # Calculate squared distances between all queries and all prototypes
     # Output should have shape (q_queries * k_way, k_way) = (num_queries, k_way)
     distances = pairwise_distances(queries, prototypes, distance)
+
+    if arc_head is not None:
+        distances = arc_head(distances,y)
 
     # Calculate log p_{phi} (y = k | x)
     log_p_y = (-distances).log_softmax(dim=1)
