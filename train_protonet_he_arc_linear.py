@@ -80,7 +80,7 @@ evaluation_taskloader = DataLoader(
 model = get_few_shot_he_encoder(num_input_channels, final_layer_size)
 model.to(device, dtype=torch.float)
 
-metric = ArcFace(s=1, margin=0.5)
+metric = ArcFace(s=64.0, margin=0.5)
 metric.to(device, dtype=torch.float)
 
 ############

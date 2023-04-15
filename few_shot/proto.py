@@ -77,6 +77,8 @@ def proto_net_episode(model: Module,
         adv_embeddings = model(x_adv)
         adv_queries = adv_embeddings[n_shot * k_way:]
         adv_distance = pairwise_distances(adv_queries, prototypes, distance)
+        if arc_head is not None:
+            adv_distance = arc_head(adv_distance, y)
         adv_log_p_y = (-adv_distance).log_softmax(dim=1)
         loss_adv = loss_fn(adv_log_p_y, y)
 
