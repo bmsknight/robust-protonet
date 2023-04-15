@@ -82,7 +82,7 @@ evaluation_taskloader = DataLoader(
 #########
 model = get_few_shot_he_encoder(num_input_channels, final_layer_size)
 model.to(device, dtype=torch.float)
-metric = ArcFace(s=1, margin=0.5)
+metric = ArcFace(s=64.0, margin=0.5)
 metric.to(device, dtype=torch.float)
 pgd_attack = PGDAttackWrapperForTraining(model, distance=args.distance, n_shot=args.n_train, k_way=args.k_train,
                                          is_he_model=True, eps=8 / 255, alpha=2 / 255, steps=7, random_start=True,
