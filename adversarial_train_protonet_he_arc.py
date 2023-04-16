@@ -3,6 +3,11 @@ Reproduce Omniglot results of Snell et al Prototypical networks.
 """
 import argparse
 
+from torch.optim import Adam
+from torch.utils.data import DataLoader
+
+from config import PATH
+from few_shot.attack import PGDAttackWrapperForTraining
 from few_shot.callbacks import *
 from few_shot.core import NShotTaskSampler, EvaluateFewShot, prepare_nshot_task
 from few_shot.datasets import OmniglotDataset, MiniImageNet
@@ -10,11 +15,7 @@ from few_shot.models import get_few_shot_he_encoder
 from few_shot.proto import proto_net_episode
 from few_shot.train import fit
 from few_shot.utils import setup_dirs
-from torch.optim import Adam
-from torch.utils.data import DataLoader
 from few_shot.arc_margin import ArcFace
-
-from config import PATH
 
 setup_dirs()
 assert torch.cuda.is_available()
@@ -26,6 +27,8 @@ torch.backends.cudnn.benchmark = True
 ##############
 parser = argparse.ArgumentParser()
 parser.add_argument('--dataset', default="miniImageNet")
+parser.add_argument('--attack-type', default="query")
+parser.add_argument('--adv-train-type', default="joint")
 parser.add_argument('--distance', default='cosine')
 parser.add_argument('--n-train', default=5, type=int)
 parser.add_argument('--n-test', default=5, type=int)
@@ -79,9 +82,11 @@ evaluation_taskloader = DataLoader(
 #########
 model = get_few_shot_he_encoder(num_input_channels, final_layer_size)
 model.to(device, dtype=torch.float)
-
 metric = ArcFace(s=64.0, margin=0.5)
 metric.to(device, dtype=torch.float)
+pgd_attack = PGDAttackWrapperForTraining(model, distance=args.distance, n_shot=args.n_train, k_way=args.k_train,
+                                         is_he_model=True, eps=8 / 255, alpha=2 / 255, steps=7, random_start=True,
+                                         attack_type=args.attack_type)
 
 ############
 # Training #
@@ -112,12 +117,11 @@ callbacks = [
         is_he_model=True
     ),
     ModelCheckpoint(
-        filepath=PATH + f'/models/proto_nets/lin_arc_{param_str}.pth',
+        filepath=PATH + f'/models/proto_nets/adv_arc_{param_str}.pth',
         monitor=f'val_{args.n_test}-shot_{args.k_test}-way_acc'
     ),
     LearningRateScheduler(schedule=lr_schedule),
-    CSVLogger(PATH + f'/logs/proto_nets/lin_arc_{param_str}.csv'),
-    ArcFaceMarginScheduler(arc_head=metric,max_epoch=n_epochs)
+    CSVLogger(PATH + f'/logs/proto_nets/adv_arc_{param_str}.csv'),
 ]
 
 fit(
@@ -130,6 +134,8 @@ fit(
     callbacks=callbacks,
     metrics=['categorical_accuracy'],
     fit_function=proto_net_episode,
+    attack_fn=pgd_attack,
+    adv_train_type=args.adv_train_type,
     fit_function_kwargs={'n_shot': args.n_train, 'k_way': args.k_train, 'q_queries': args.q_train, 'train': True,
-                         'distance': args.distance, 'is_he_model': True, 'arc_head': metric},
+                         'distance': args.distance, 'is_he_model': True, 'arc_head':metric},
 )
