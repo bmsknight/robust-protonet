@@ -27,7 +27,7 @@ torch.backends.cudnn.benchmark = True
 parser = argparse.ArgumentParser()
 parser.add_argument('--dataset', default="miniImageNet")
 parser.add_argument('--attack-type', default="query")
-parser.add_argument('--adv-train-type', default="joint")
+parser.add_argument('--adv-train-type', default="")
 parser.add_argument('--distance', default='l2')
 parser.add_argument('--n-train', default=5, type=int)
 parser.add_argument('--n-test', default=5, type=int)
@@ -112,11 +112,11 @@ callbacks = [
         distance=args.distance
     ),
     ModelCheckpoint(
-        filepath=PATH + f'/models/proto_nets/adv_{param_str}.pth',
+        filepath=PATH + f'/models/proto_nets/adv{args.adv_train_type}_{param_str}.pth',
         monitor=f'val_{args.n_test}-shot_{args.k_test}-way_acc'
     ),
     LearningRateScheduler(schedule=lr_schedule),
-    CSVLogger(PATH + f'/logs/proto_nets/adv_{param_str}.csv'),
+    CSVLogger(PATH + f'/logs/proto_nets/adv{args.adv_train_type}_{param_str}.csv'),
 ]
 
 fit(
