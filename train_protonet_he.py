@@ -108,11 +108,11 @@ callbacks = [
         is_he_model=True
     ),
     ModelCheckpoint(
-        filepath=PATH + f'/models/proto_nets/{param_str}.pth',
+        filepath=PATH + f'/models/proto_nets/he_{param_str}.pth',
         monitor=f'val_{args.n_test}-shot_{args.k_test}-way_acc'
     ),
     LearningRateScheduler(schedule=lr_schedule),
-    CSVLogger(PATH + f'/logs/proto_nets/{param_str}.csv'),
+    CSVLogger(PATH + f'/logs/proto_nets/he_{param_str}.csv'),
 ]
 
 fit(
