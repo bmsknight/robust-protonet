@@ -27,6 +27,7 @@ torch.backends.cudnn.benchmark = True
 parser = argparse.ArgumentParser()
 parser.add_argument('--dataset', default="miniImageNet")
 parser.add_argument('--distance', default='cosine')
+parser.add_argument('--scale', default=1)
 parser.add_argument('--n-train', default=5, type=int)
 parser.add_argument('--n-test', default=5, type=int)
 parser.add_argument('--k-train', default=20, type=int)
@@ -80,7 +81,7 @@ evaluation_taskloader = DataLoader(
 model = get_few_shot_he_encoder(num_input_channels, final_layer_size)
 model.to(device, dtype=torch.float)
 
-metric = ArcFace(s=64.0, margin=0.5)
+metric = ArcFace(s=args.scale, margin=0.5)
 metric.to(device, dtype=torch.float)
 
 ############
@@ -112,11 +113,11 @@ callbacks = [
         is_he_model=True
     ),
     ModelCheckpoint(
-        filepath=PATH + f'/models/proto_nets/lin_arc_{param_str}.pth',
+        filepath=PATH + f'/models/proto_nets/lin_arc_{args.scale}_{param_str}.pth',
         monitor=f'val_{args.n_test}-shot_{args.k_test}-way_acc'
     ),
     LearningRateScheduler(schedule=lr_schedule),
-    CSVLogger(PATH + f'/logs/proto_nets/lin_arc_{param_str}.csv'),
+    CSVLogger(PATH + f'/logs/proto_nets/lin_arc_{args.scale}_{param_str}.csv'),
     ArcFaceMarginScheduler(arc_head=metric,max_epoch=n_epochs)
 ]
 
