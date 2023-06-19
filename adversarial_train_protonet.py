@@ -11,7 +11,7 @@ from few_shot.attack import PGDAttackWrapperForTraining
 from few_shot.callbacks import *
 from few_shot.core import NShotTaskSampler, EvaluateFewShot, prepare_nshot_task
 from few_shot.datasets import OmniglotDataset, MiniImageNet
-from few_shot.models import get_few_shot_encoder
+from few_shot.resnet_12 import get_few_shot_encoder
 from few_shot.proto import proto_net_episode
 from few_shot.train import fit
 from few_shot.utils import setup_dirs
@@ -77,8 +77,9 @@ evaluation_taskloader = DataLoader(
 #########
 # Model #
 #########
-model = get_few_shot_encoder(num_input_channels)
+model = get_few_shot_encoder(num_input_channels, avg_pool=False, drop_block_size=5, drop_rate=0.1)
 model.to(device, dtype=torch.float)
+model = torch.nn.DataParallel(model, device_ids=[0, 1])
 
 pgd_attack = PGDAttackWrapperForTraining(model, distance=args.distance, n_shot=args.n_train, k_way=args.k_train,
                                          is_he_model=False, eps=8 / 255, alpha=2 / 255, steps=7, random_start=True,
