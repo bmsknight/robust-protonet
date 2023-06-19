@@ -113,11 +113,11 @@ callbacks = [
         distance=args.distance
     ),
     ModelCheckpoint(
-        filepath=PATH + f'/models/proto_nets/adv{args.adv_train_type}_{param_str}.pth',
+        filepath=PATH + f'/models/proto_nets/resnet_adv{args.adv_train_type}_{param_str}.pth',
         monitor=f'val_{args.n_test}-shot_{args.k_test}-way_acc'
     ),
     LearningRateScheduler(schedule=lr_schedule),
-    CSVLogger(PATH + f'/logs/proto_nets/adv{args.adv_train_type}_{param_str}.csv'),
+    CSVLogger(PATH + f'/logs/proto_nets/resnet_adv{args.adv_train_type}_{param_str}.csv'),
 ]
 
 fit(
