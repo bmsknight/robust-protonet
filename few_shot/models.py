@@ -79,23 +79,24 @@ def functional_conv_block(x: torch.Tensor, weights: torch.Tensor, biases: torch.
 ##########
 # Models #
 ##########
-def get_few_shot_encoder(num_input_channels=1) -> nn.Module:
+def get_few_shot_encoder(num_input_channels=1, model_type='resnet12') -> nn.Module:
     """Creates a few shot encoder as used in Matching and Prototypical Networks
 
     # Arguments:
         num_input_channels: Number of color channels the model expects input data to contain. Omniglot = 1,
             miniImageNet = 3
     """
-    # return nn.Sequential(
-    #     conv_block(num_input_channels, 64),
-    #     conv_block(64, 64),
-    #     conv_block(64, 64),
-    #     conv_block(64, 64),
-    #     Flatten(),
-    # )
-    resnet12_model = resnet12(avg_pool=False, drop_rate=0.1, dropblock_size=5).cuda()
-    resnet12_model = torch.nn.DataParallel(resnet12_model, device_ids=[0, 1, 2, 3])
-    return resnet12_model
+    if model_type=='resnet12':
+        resnet12_model = resnet12(avg_pool=False, drop_rate=0.1, dropblock_size=5).cuda()
+        resnet12_model = torch.nn.DataParallel(resnet12_model, device_ids=[0, 1, 2, 3])
+        return resnet12_model
+    return nn.Sequential(
+        conv_block(num_input_channels, 64),
+        conv_block(64, 64),
+        conv_block(64, 64),
+        conv_block(64, 64),
+        Flatten(),
+    )
 
 
 def get_few_shot_he_encoder(num_input_channels=1,final_layer_size=64) -> nn.Module:
