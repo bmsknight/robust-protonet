@@ -36,7 +36,7 @@ parser.add_argument('--k-test', default=5, type=int)
 parser.add_argument('--q-train', default=15, type=int)
 parser.add_argument('--q-test', default=1, type=int)
 args = parser.parse_args()
-
+print('Arguments:', args)
 evaluation_episodes = 1000
 episodes_per_epoch = 100
 
@@ -50,12 +50,12 @@ elif args.dataset == 'miniImageNet':
     n_epochs = 80
     dataset_class = MiniImageNet
     num_input_channels = 3
-    final_layer_size = 1600
+    final_layer_size = 16000 #1600
     drop_lr_every = 40
 else:
     raise (ValueError, 'Unsupported dataset')
 
-param_str = f'{args.adv_train_type}'
+param_str = f'{args.adv_train_type}_{args.k_test}way_{args.n_test}shot'
 
 print(param_str)
 
@@ -139,3 +139,4 @@ fit(
     fit_function_kwargs={'n_shot': args.n_train, 'k_way': args.k_train, 'q_queries': args.q_train, 'train': True,
                          'distance': args.distance, 'is_contrast_model': True, 'proj_head': proj_head, 'contrast_loss_fn': contrast_loss_fn}
 )
+

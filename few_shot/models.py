@@ -1,6 +1,9 @@
 import torch
 import torch.nn.functional as F
 from torch import nn
+import sys
+sys.path.append('.')
+from few_shot.resnet import resnet12
 
 
 ##########
@@ -83,13 +86,16 @@ def get_few_shot_encoder(num_input_channels=1) -> nn.Module:
         num_input_channels: Number of color channels the model expects input data to contain. Omniglot = 1,
             miniImageNet = 3
     """
-    return nn.Sequential(
-        conv_block(num_input_channels, 64),
-        conv_block(64, 64),
-        conv_block(64, 64),
-        conv_block(64, 64),
-        Flatten(),
-    )
+    # return nn.Sequential(
+    #     conv_block(num_input_channels, 64),
+    #     conv_block(64, 64),
+    #     conv_block(64, 64),
+    #     conv_block(64, 64),
+    #     Flatten(),
+    # )
+    resnet12_model = resnet12(avg_pool=False, drop_rate=0.1, dropblock_size=5).cuda()
+    resnet12_model = torch.nn.DataParallel(resnet12_model, device_ids=[0, 1, 2, 3])
+    return resnet12_model
 
 
 def get_few_shot_he_encoder(num_input_channels=1,final_layer_size=64) -> nn.Module:

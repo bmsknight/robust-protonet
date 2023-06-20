@@ -105,11 +105,11 @@ callbacks = [
         distance=args.distance
     ),
     ModelCheckpoint(
-        filepath=PATH + f'/models/proto_nets/{param_str}.pth',
+        filepath=PATH + f'/models/proto_nets/baseline_{args.k_test}way_{args.n_test}shot.pth',
         monitor=f'val_{args.n_test}-shot_{args.k_test}-way_acc'
     ),
     LearningRateScheduler(schedule=lr_schedule),
-    CSVLogger(PATH + f'/logs/proto_nets/{param_str}.csv'),
+    CSVLogger(PATH + f'/logs/proto_nets/baseline_{args.k_test}way_{args.n_test}shot.csv'),
 ]
 
 fit(
