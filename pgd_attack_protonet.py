@@ -65,7 +65,8 @@ prepare_batch = prepare_nshot_task(args.n_test, args.k_test, args.q_test)
 # Model #
 #########
 if ("baseline" in args.model) or ("contrast" in args.model):
-    emb_model = get_few_shot_encoder(num_input_channels, avg_pool=False, drop_block_size=5, drop_rate=0.1)
+    emb_model = get_few_shot_encoder(num_input_channels, avg_pool=False, drop_rate=0.1)
+    emb_model = torch.nn.DataParallel(emb_model)
     args.distance = "l2"
     model_str = args.model
     is_he_model = False
@@ -85,7 +86,6 @@ emb_model.load_state_dict(torch.load(PATH + f'/models/proto_nets/{model_str}.pth
 model = ProtoNetWrapper(embedding_model=emb_model, distance=args.distance, n_shot=args.n_test, k_way=args.k_test,
                         is_he_model=is_he_model)
 model.to(device, dtype=torch.float)
-model = torch.nn.DataParallel(model, device_ids=[0, 1])
 
 # attack
 atk = PGD(model, eps=8 / 255, alpha=2 / 255, steps=20, random_start=True)
