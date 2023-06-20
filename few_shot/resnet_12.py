@@ -187,3 +187,35 @@ def get_few_shot_encoder(num_input_channels=3, keep_prob=1.0, avg_pool=False, **
     """
     model = ResNet(BasicBlock, num_input_channels, keep_prob=keep_prob, avg_pool=avg_pool, **kwargs)
     return model
+
+
+def get_few_shot_he_encoder(num_input_channels=3, final_layer_size=1400, is_he=True,
+                            keep_prob=1.0, avg_pool=False, **kwargs):
+    """Constructs a ResNet-12 model.
+    """
+    class HEResNet(nn.Module):
+        def __init__(self, num_input_channels, final_layer_size, is_he, keep_prob, avg_pool, **kwargs):
+            super().__init__()
+            self.feature_extractor = ResNet(BasicBlock, num_input_channels, keep_prob=keep_prob, avg_pool=avg_pool,
+                                            **kwargs)
+            self.embedding_layer = nn.Linear(final_layer_size, final_layer_size, bias=False)
+            self.he_flag = is_he
+
+            for m in self.modules():
+                if isinstance(m, nn.Conv2d):
+                    nn.init.kaiming_normal_(m.weight, mode='fan_out', nonlinearity='relu')
+                elif isinstance(m, (nn.BatchNorm2d, nn.GroupNorm)):
+                    nn.init.constant_(m.weight, 1)
+                    nn.init.constant_(m.bias, 0)
+
+        def forward(self, x):
+            x = self.feature_extractor(x)
+            if self.he_flag:
+                # normalize the features
+                x = nn.functional.normalize(x, p=2, dim=1)
+                # normalize the weights
+                self.embedding_layer.weight.data = nn.functional.normalize(self.embedding_layer.weight.data, p=2, dim=1)
+
+            return self.embedding_layer(x)
+
+    return HEResNet(num_input_channels, final_layer_size, is_he, keep_prob, avg_pool, **kwargs)
