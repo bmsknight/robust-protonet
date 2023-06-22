@@ -10,7 +10,7 @@ from config import PATH
 from few_shot.core import NShotTaskSampler, prepare_nshot_task
 from few_shot.datasets import MiniImageNet
 from few_shot.metrics import categorical_accuracy
-from few_shot.models import get_few_shot_he_encoder
+from few_shot.resnet_12 import get_few_shot_he_encoder
 from few_shot.resnet_12 import get_few_shot_encoder
 from few_shot.protonet_wrapper import ProtoNetWrapper
 from few_shot.utils import setup_dirs
@@ -71,7 +71,8 @@ if ("baseline" in args.model) or ("contrast" in args.model):
     model_str = args.model
     is_he_model = False
 elif ("he" in args.model) or ("arc" in args.model):
-    emb_model = get_few_shot_he_encoder(num_input_channels,final_layer_size=1600)
+    emb_model = get_few_shot_he_encoder(num_input_channels,final_layer_size=16000, avg_pool=False, drop_rate=0.1)
+    emb_model = torch.nn.DataParallel(emb_model)
     args.distance = "cosine"
     model_str = args.model
     is_he_model = True
