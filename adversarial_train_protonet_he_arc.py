@@ -3,6 +3,7 @@ Reproduce Omniglot results of Snell et al Prototypical networks.
 """
 import argparse
 
+import torch.nn
 from torch.optim import Adam
 from torch.utils.data import DataLoader
 
@@ -11,7 +12,7 @@ from few_shot.attack import PGDAttackWrapperForTraining
 from few_shot.callbacks import *
 from few_shot.core import NShotTaskSampler, EvaluateFewShot, prepare_nshot_task
 from few_shot.datasets import OmniglotDataset, MiniImageNet
-from few_shot.models import get_few_shot_he_encoder
+from few_shot.resnet_12 import get_few_shot_he_encoder
 from few_shot.proto import proto_net_episode
 from few_shot.train import fit
 from few_shot.utils import setup_dirs
@@ -52,7 +53,7 @@ elif args.dataset == 'miniImageNet':
     n_epochs = 80
     dataset_class = MiniImageNet
     num_input_channels = 3
-    final_layer_size = 1600
+    final_layer_size = 16000
     drop_lr_every = 40
 else:
     raise (ValueError, 'Unsupported dataset')
@@ -81,10 +82,14 @@ evaluation_taskloader = DataLoader(
 #########
 # Model #
 #########
-model = get_few_shot_he_encoder(num_input_channels, final_layer_size)
+model = get_few_shot_he_encoder(num_input_channels, final_layer_size, avg_pool=False, drop_rate=0.1)
 model.to(device, dtype=torch.float)
+model = torch.nn.DataParallel(model)
+
 metric = ArcFace(s=args.scale, margin=0.5)
 metric.to(device, dtype=torch.float)
+metric = torch.nn.DataParallel(metric)
+
 pgd_attack = PGDAttackWrapperForTraining(model, distance=args.distance, n_shot=args.n_train, k_way=args.k_train,
                                          is_he_model=True, eps=8 / 255, alpha=2 / 255, steps=7, random_start=True,
                                          attack_type=args.attack_type)
@@ -118,11 +123,11 @@ callbacks = [
         is_he_model=True
     ),
     ModelCheckpoint(
-        filepath=PATH + f'/models/proto_nets/adv{args.adv_train_type}_arc_{args.scale}_{param_str}.pth',
+        filepath=PATH + f'/models/proto_nets/resnet_adv{args.adv_train_type}_arc_{args.scale}_{param_str}.pth',
         monitor=f'val_{args.n_test}-shot_{args.k_test}-way_acc'
     ),
     LearningRateScheduler(schedule=lr_schedule),
-    CSVLogger(PATH + f'/logs/proto_nets/adv{args.adv_train_type}_arc_{args.scale}_{param_str}.csv'),
+    CSVLogger(PATH + f'/logs/proto_nets/resnet_adv{args.adv_train_type}_arc_{args.scale}_{param_str}.csv'),
 ]
 
 fit(
