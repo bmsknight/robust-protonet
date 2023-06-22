@@ -77,7 +77,9 @@ elif ("he" in args.model) or ("arc" in args.model):
     model_str = args.model
     is_he_model = True
 elif "fc" in args.model:
-    emb_model = get_few_shot_he_encoder(num_input_channels, final_layer_size=1600, is_he=False)
+    emb_model = get_few_shot_he_encoder(num_input_channels, final_layer_size=16000, is_he=False,
+                                        avg_pool=False, drop_rate=0.1)
+    emb_model = torch.nn.DataParallel(emb_model)
     args.distance = "l2"
     model_str = args.model
     is_he_model = False
