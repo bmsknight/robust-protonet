@@ -74,9 +74,9 @@ evaluation_taskloader = DataLoader(
 #########
 # Model #
 #########
-model = get_few_shot_encoder(num_input_channels, avg_pool=False, drop_block_size=5, drop_rate=0.1)
+model = get_few_shot_encoder(num_input_channels, avg_pool=False, drop_rate=0.1)
 model.to(device, dtype=torch.float)
-model = torch.nn.DataParallel(model, device_ids=[0, 1])
+model = torch.nn.DataParallel(model)
 
 ############
 # Training #

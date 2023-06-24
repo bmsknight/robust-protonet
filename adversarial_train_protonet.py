@@ -77,9 +77,9 @@ evaluation_taskloader = DataLoader(
 #########
 # Model #
 #########
-model = get_few_shot_encoder(num_input_channels, avg_pool=False, drop_block_size=5, drop_rate=0.1)
+model = get_few_shot_encoder(num_input_channels, avg_pool=False, drop_rate=0.1)
 model.to(device, dtype=torch.float)
-model = torch.nn.DataParallel(model, device_ids=[0, 1])
+model = torch.nn.DataParallel(model)
 
 pgd_attack = PGDAttackWrapperForTraining(model, distance=args.distance, n_shot=args.n_train, k_way=args.k_train,
                                          is_he_model=False, eps=8 / 255, alpha=2 / 255, steps=7, random_start=True,
